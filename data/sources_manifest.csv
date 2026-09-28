@@ -1,26 +1,25 @@
-source_id,title,organization,topic,url,status
-S01,Crop evapotranspiration - FAO Irrigation and Drainage Paper 56,FAO,crop water requirements,https://www.fao.org/4/x0490e/x0490e00.htm,pending_download
-S02,Crop yield response to water - FAO Irrigation and Drainage Paper 66,FAO,crop water stress,https://www.fao.org/4/i2800e/i2800e00.htm,pending_download
-S03,Water quality for agriculture - Irrigation and Drainage Paper 29 Rev. 1,FAO,water quality salinity,https://www.fao.org/4/t0234e/t0234e00.htm,pending_download
-S04,Deficit irrigation practices - Water Reports 22,FAO,deficit irrigation,https://www.fao.org/4/y3655e/y3655e00.htm,pending_download
-S05,Water harvesting - manual for design and construction,FAO,water harvesting,https://www.fao.org/4/u3160e/u3160e00.htm,pending_download
-S06,Climate-Smart Agriculture Sourcebook,FAO,climate smart agriculture,https://www.fao.org/4/i3325e/i3325e.pdf,pending_download
-S07,Plant nutrition for food security - integrated nutrient management,FAO,plant nutrition,https://www.fao.org/4/a0443e/a0443e00.htm,pending_download
-S08,Soil testing methods manual - Global Soil Doctors Programme,FAO,soil testing,http://www.fao.org/3/ca2796en/CA2796EN.pdf,pending_download
-S09,Conservation Agriculture Training Guide,FAO,soil water conservation,https://www.fao.org/3/i7154en/i7154en.pdf,pending_download
-S10,Technical Handbook on Pressurized Irrigation Techniques,FAO,pressurized irrigation,https://www.fao.org/4/a1336e/a1336e00.htm,pending_download
-S11,Irrigation Manual Vol 1 - Irrigation Development: a Multifaceted Process,FAO,irrigation fundamentals,https://www.fao.org/land-water/resources/publications/results/en/?ipp=10&page=48,pending_download
-S12,Irrigation Manual Vol 2 - Natural Resources Assessment,FAO,natural resources,https://www.fao.org/land-water/resources/publications/results/en/?ipp=10&page=48,pending_download
-S13,Irrigation Manual Vol 3 - Agronomic Aspects of Irrigated Crop Production,FAO,irrigated agronomy,https://www.fao.org/land-water/resources/publications/results/en/?ipp=10&page=48,pending_download
-S14,Irrigation Manual Vol 4 - Crop Water Requirements and Irrigation Scheduling,FAO,irrigation scheduling,https://www.fao.org/land-water/resources/publications/results/en/?ipp=10&page=48,pending_download
-S15,Irrigation Manual Vol 5 - Irrigation Pumping Plant,FAO,irrigation systems,https://www.fao.org/land-water/resources/publications/results/en/?ipp=10&page=48,pending_download
-S16,Irrigation Manual Vol 7 - Surface Irrigation Systems,FAO,surface irrigation,https://www.fao.org/4/ai596e/ai596e00.htm,pending_download
-S17,Irrigation Manual Vol 8 - Sprinkler Irrigation Systems,FAO,sprinkler irrigation,https://www.fao.org/land-water/resources/publications/results/en/?ipp=10&page=48,pending_download
-S18,Irrigation Scheduling Reference Manual,FAO,irrigation scheduling,https://agris.fao.org/search/en/providers/123818/records/691dca3249e41686f7931343,pending_download
-S19,A Soil and Plant Analysis Manual Adapted for West Asia and North Africa,ICARDA,soil plant analysis,https://hdl.handle.net/20.500.11766/66995,pending_download
-S20,Supplemental Irrigation: A Promising Climate-resilience Practice for Sustainable Dryland Agriculture,ICARDA,supplemental irrigation,https://icarda.org/publications/4573/supplemental-irrigation-promising-climate-resilience-practice-sustainable-dryland,pending_download
-S21,Supplemental Irrigation: A Highly Efficient Water-Use Practice,ICARDA,supplemental irrigation,https://repo.mel.cgiar.org/handle/20.500.11766/7524,pending_download
-S22,Managing Scarce Water Resources in the Drylands of West Asia and North Africa,ICARDA,dryland water management,https://icarda.org/publications/32310/managing-scarce-water-resources-drylands-west-asia-and-north-africa-review-joint,pending_download
-S23,Water management - agricultural practices and technologies for resilience,ICARDA/CGIAR,water management,https://icarda.org/publications/5111/water-management,pending_download
-S24,Yemen Country Climate and Development Report,World Bank,Yemen climate agriculture,https://www.worldbank.org/en/country/yemen/publication/yemen-country-climate-and-development-report,pending_download
-S25,Water for Food: Modernizing Agriculture for a Climate-Smart Future,World Bank,water agriculture,https://documents.worldbank.org/en/publication/documents-reports/documentdetail/099121924041510940,pending_download
+source_id,title,organization,topic,mode,download_url,verification
+S01,Crop evapotranspiration - FAO Irrigation and Drainage Paper 56,FAO,crop water requirements,fao_html_book,https://www.fao.org/4/x0490e/x0490e00.htm,official_fao
+S02,Crop yield response to water - FAO Irrigation and Drainage Paper 66,FAO,crop water stress,fao_html_book,https://www.fao.org/4/i2800e/i2800e00.htm,official_fao
+S03,Water quality for agriculture - Irrigation and Drainage Paper 29 Rev. 1,FAO,water quality salinity,fao_html_book,https://www.fao.org/4/t0234e/t0234e00.htm,official_fao
+S04,Deficit irrigation practices - Water Reports 22,FAO,deficit irrigation,fao_html_book,https://www.fao.org/4/y3655e/y3655e00.htm,official_fao
+S05,Water harvesting - manual for design and construction,FAO,water harvesting,fao_html_book,https://www.fao.org/4/u3160e/u3160e00.htm,official_fao
+S06,Plant nutrition for food security,FAO,plant nutrition,fao_html_book,https://www.fao.org/4/a0443e/a0443e00.htm,official_fao
+S07,Technical Handbook on Pressurized Irrigation Techniques,FAO,pressurized irrigation,fao_html_book,https://www.fao.org/4/a1336e/a1336e00.htm,official_fao
+S08,Irrigation Manual - Surface Irrigation Systems,FAO,surface irrigation,fao_html_book,https://www.fao.org/4/ai596e/ai596e00.htm,official_fao
+S09,Climate-Smart Agriculture Sourcebook,FAO,climate smart agriculture,pdf,https://www.fao.org/3/i3325e/i3325e.pdf,official_fao_pdf
+S10,Soil testing methods manual - Global Soil Doctors Programme,FAO,soil testing,pdf,https://www.fao.org/3/ca2796en/CA2796EN.pdf,official_fao_pdf
+S11,Conservation Agriculture Training Guide,FAO,conservation agriculture,pdf,https://www.fao.org/3/i7154en/i7154en.pdf,official_fao_pdf
+S12,Manual on integrated soil management and conservation practices,FAO/IITA,soil and water conservation,pdf,https://www.fao.org/docrep/016/x4799e/x4799e.pdf,official_fao_pdf
+S13,Practical guidelines for Early Warning - Early Action plans on agricultural drought,FAO,drought management,pdf,https://www.fao.org/3/cb0624en/CB0624EN.pdf,official_fao_pdf
+S14,Climate-Smart Agriculture training manual,FAO,climate smart agriculture,pdf,https://www.fao.org/3/ca2189en/CA2189EN.pdf,official_fao_pdf
+S15,Soil health for paddy rice - manual for farmer field school facilitators,FAO,soil health,pdf,https://www.fao.org/3/ca8167en/ca8167en.pdf,official_fao_pdf
+S16,The multi-faced role of soil in the Near East and North Africa,FAO,NENA soil management,pdf,https://www.fao.org/3/ca3803en/CA3803EN.pdf,official_fao_pdf
+S17,Drought characteristics and management in North Africa and the Near East,FAO/National Drought Mitigation Center,NENA drought,pdf,https://www.fao.org/3/CA0034EN/ca0034en.pdf,official_fao_pdf
+S18,Soil erosion - the greatest challenge for sustainable soil management,FAO,soil erosion,pdf,https://www.fao.org/3/ca4395en/CA4395EN.pdf,official_fao_pdf
+S19,Opportunities and gaps in the agriculture water and land use sectors in NENA,FAO,NENA climate adaptation,pdf,https://www.fao.org/3/cb8662en/cb8662en.pdf,official_fao_pdf
+S20,Discovery-based learning in land and water management,FAO,land and water management,pdf,https://www.fao.org/3/a-i6897e.pdf,official_fao_pdf
+S21,Climate-smart agriculture - conservation agriculture practice brief,FAO/CIMMYT,climate-smart conservation agriculture,pdf,https://www.fao.org/3/a-i4066e.pdf,official_fao_pdf
+S22,Climate Smart Agriculture - Building Resilience to Climate Change,FAO/Springer,climate resilience,pdf,https://www.fao.org/3/a-i7931e.pdf,official_fao_pdf
+S23,Regional assessment of soil changes in the Near East and North Africa,FAO,NENA soil degradation,pdf,https://www.fao.org/3/a-bc602e.pdf,official_fao_pdf
+S24,Water accounting and auditing for better water governance,FAO,water governance,pdf,https://www.fao.org/3/cb2227en/CB2227EN.pdf,official_fao_pdf

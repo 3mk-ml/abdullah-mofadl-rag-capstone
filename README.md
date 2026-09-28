@@ -119,7 +119,7 @@ Do not commit `.env`.
 
 ## 2. Collect the corpus
 
-`data/sources_manifest.csv` contains 25 high-quality source candidates from FAO, ICARDA/CGIAR, and the World Bank. Download the final 20–50 documents and place them in `data/raw/`.
+`data/sources_manifest.csv` contains 25 high-quality source candidates from FAO, ICARDA/CGIAR, and the World Bank. The curated manifest now contains 24 official FAO/FAO-partner publications. Download them reproducibly with:\n\n```bash\npython scripts/download_corpus.py\n```\n\nThe downloader saves the corpus into `data/raw/`, writes SHA-256 inventory metadata, and fails the run if fewer than 20 documents are collected.
 
 Important rules:
 - Prefer complete PDF publications, not random blogs.

@@ -1,0 +1,49 @@
+{
+  "k": 5,
+  "hits": 27,
+  "questions": 30,
+  "recall": 0.9,
+  "source_run": "https://github.com/3mk-ml/abdullah-mofadl-rag-capstone/actions/runs/36487406502",
+  "misses": [
+    {
+      "id": "Q03",
+      "question": "Which major climatic factors determine evapotranspiration?",
+      "gold_chunk_ids": ["296edc36e30527d63a77"],
+      "retrieved_chunk_ids": [
+        "7948d90397e4941a8b1a",
+        "7551a63d866586d12b7b",
+        "11654498e8f90fb97627",
+        "d6f56e14cd82504fd393",
+        "ff5ddd5c35e65dd9bc27"
+      ]
+    },
+    {
+      "id": "Q12",
+      "question": "How can crop selection help manage saline irrigation conditions?",
+      "gold_chunk_ids": ["39ddc15184df7d7d3728", "fb31be4fafe3f5927f5f"],
+      "retrieved_chunk_ids": [
+        "9df4f8f94309593a00e7",
+        "df799a6a4558be1f5018",
+        "68e1f0fcf26a24089d39",
+        "d54f5d024c3f0dafe978",
+        "f32a9d19fa6df05dc56d"
+      ]
+    },
+    {
+      "id": "Q24",
+      "question": "How does permanent organic soil cover help conserve soil moisture?",
+      "gold_chunk_ids": [
+        "80878534988dd44959eb",
+        "444e475cf9e198aabe9f",
+        "479cfd8a761d735c2fd4"
+      ],
+      "retrieved_chunk_ids": [
+        "ad06a9c5c2ae0a1baffc",
+        "7b35f5b68c98aa482516",
+        "7219ea8f480fad95ba48",
+        "4ccd88a9571a8ab148f5",
+        "4d101b9372d72323f974"
+      ]
+    }
+  ]
+}

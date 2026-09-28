@@ -1,35 +1,245 @@
 {
-  "instructions": "Replace placeholders only after the final corpus is downloaded. Every item must be manually verified against a gold source/passage. Keep 30 retrieval questions; use 20 of them with ground_truth for RAGAS.",
+  "instructions": "Verified against the exact 20-document corpus produced by GitHub Actions run 36484098336. A retrieval hit is counted when any manually verified gold_chunk_id appears in the final top-5 reranked results. Ground-truth answers are source-grounded paraphrases for RAGAS.",
   "questions": [
-    {"id":"Q01","question":"What is reference evapotranspiration and how is it used to estimate crop evapotranspiration?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q02","question":"How does the crop coefficient approach relate ETc to ETo?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q03","question":"Which factors should be considered when scheduling irrigation?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q04","question":"How do crop growth stages influence irrigation scheduling?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q05","question":"What is deficit irrigation and when can it be useful?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q06","question":"What is supplemental irrigation in dryland farming?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q07","question":"Why can small amounts of supplemental irrigation improve rainfed crop yields?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q08","question":"What are the main irrigation-water quality problems related to salinity and infiltration?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q09","question":"How can poor-quality irrigation water affect crop production?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q10","question":"What is water harvesting and what problem does it address in dry areas?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q11","question":"What factors affect a soil's ability to retain and supply plant nutrients?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q12","question":"What is integrated nutrient management?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q13","question":"Why should organic and inorganic nutrient sources be considered complementary?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q14","question":"What soil properties are commonly examined in basic soil testing?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q15","question":"How does soil moisture stress affect crop growth and yield?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q16","question":"What is crop water productivity?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q17","question":"How can irrigation scheduling improve water-use efficiency?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q18","question":"What are the principles of climate-smart agriculture?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q19","question":"Which water-management practices can make agriculture more climate-resilient?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q20","question":"What is conservation agriculture and how can it help soil moisture management?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q21","question":"What is the difference between full irrigation and supplemental irrigation?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q22","question":"Why is timing especially important when applying supplemental irrigation?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q23","question":"Which crop growth stages can be particularly sensitive to water stress?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q24","question":"What is the purpose of pressurized irrigation systems?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q25","question":"What considerations influence the choice between surface, sprinkler, and drip irrigation?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q26","question":"How can soil fertility interact with water management in dryland agriculture?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q27","question":"Why is water management especially important in West Asia and North Africa drylands?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q28","question":"What climate hazards are particularly relevant to agriculture in Yemen?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q29","question":"How can soil conservation and water management support climate adaptation in Yemen?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""},
-    {"id":"Q30","question":"When the available sources do not support a precise fertilizer or irrigation dose, how should the system respond?","gold_source":"","must_contain":"","gold_chunk_ids":[],"ground_truth":""}
+    {
+      "id": "Q01",
+      "question": "How does FAO define reference evapotranspiration (ETo)?",
+      "gold_source": "S01_Crop_evapotranspiration_-_FAO_Irrigation_and_Drainage_Paper_56.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["c7a6d5a4d98086da2544", "535fc871c7d2d924b5e5"],
+      "ground_truth": "Reference evapotranspiration (ETo) is the evapotranspiration rate from a defined reference surface that is not short of water. FAO uses a hypothetical grass reference surface so ETo expresses atmospheric evaporative demand independently of crop type, crop development, and soil factors."
+    },
+    {
+      "id": "Q02",
+      "question": "What equation relates crop evapotranspiration (ETc) to reference evapotranspiration (ETo) and the crop coefficient (Kc)?",
+      "gold_source": "S01_Crop_evapotranspiration_-_FAO_Irrigation_and_Drainage_Paper_56.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["a9902a96262edd873e05", "684a5913bb3d063be321", "64e05cc106c33964d8b1"],
+      "ground_truth": "In the crop-coefficient approach, crop evapotranspiration is calculated as ETc = Kc × ETo, where Kc represents the crop-specific differences between the crop and the reference surface."
+    },
+    {
+      "id": "Q03",
+      "question": "Which major climatic factors determine evapotranspiration?",
+      "gold_source": "S01_Crop_evapotranspiration_-_FAO_Irrigation_and_Drainage_Paper_56.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["296edc36e30527d63a77"],
+      "ground_truth": "The main climatic factors are solar radiation, air temperature, air humidity, and wind speed."
+    },
+    {
+      "id": "Q04",
+      "question": "Why does the crop coefficient Kc change during a crop's growing season?",
+      "gold_source": "S01_Crop_evapotranspiration_-_FAO_Irrigation_and_Drainage_Paper_56.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["a9902a96262edd873e05", "dcb48419f360edf43180"],
+      "ground_truth": "Kc changes because crop characteristics change as the crop develops. Differences in canopy, crop height, ground cover, aerodynamic properties, and other crop characteristics vary from sowing to harvest, so Kc varies by growth stage."
+    },
+    {
+      "id": "Q05",
+      "question": "How is crop evapotranspiration adjusted when a crop is under water stress or other non-standard conditions?",
+      "gold_source": "S01_Crop_evapotranspiration_-_FAO_Irrigation_and_Drainage_Paper_56.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["d4654324ba77029d8d78", "a9902a96262edd873e05", "25c4d393b6a99eed4d24"],
+      "ground_truth": "Under non-standard conditions, ETc is corrected to an adjusted crop evapotranspiration. FAO describes using a water-stress coefficient Ks and/or adjusting Kc to account for water stress and other management or environmental constraints."
+    },
+    {
+      "id": "Q06",
+      "question": "What are the defining characteristics of FAO's reference surface for ETo?",
+      "gold_source": "S01_Crop_evapotranspiration_-_FAO_Irrigation_and_Drainage_Paper_56.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["0c09144c30620a6af254"],
+      "ground_truth": "FAO defines the reference surface as a hypothetical, well-watered grass surface with an assumed crop height of 0.12 m, surface resistance of 70 s/m, and albedo of 0.23."
+    },
+    {
+      "id": "Q07",
+      "question": "What is the difference between crop evapotranspiration under standard and non-standard conditions?",
+      "gold_source": "S01_Crop_evapotranspiration_-_FAO_Irrigation_and_Drainage_Paper_56.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["a9902a96262edd873e05", "25c4d393b6a99eed4d24", "535fc871c7d2d924b5e5"],
+      "ground_truth": "Standard ETc refers to evapotranspiration from well-managed, well-watered crops without limiting stresses. Under non-standard conditions, factors such as water shortage, salinity, poor fertility, pests, diseases, or waterlogging can reduce evapotranspiration, so ETc must be adjusted."
+    },
+    {
+      "id": "Q08",
+      "question": "What four major problem categories does FAO use when evaluating irrigation-water quality?",
+      "gold_source": "S03_Water_quality_for_agriculture_-_Irrigation_and_Drainage_Paper_29_Rev._1.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["55256cf07566c1ab9266", "9d8772541ac3b88e71be"],
+      "ground_truth": "FAO groups irrigation-water quality problems into salinity, water infiltration, specific ion toxicity, and miscellaneous problems."
+    },
+    {
+      "id": "Q09",
+      "question": "How can salinity in irrigation water reduce crop growth and yield?",
+      "gold_source": "S03_Water_quality_for_agriculture_-_Irrigation_and_Drainage_Paper_29_Rev._1.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["55256cf07566c1ab9266", "9df4f8f94309593a00e7", "212f306e82a9b4c6c200"],
+      "ground_truth": "When salts accumulate in the root zone, they reduce the soil water available to the crop. Water uptake and growth can decline, and damaging root-zone salinity can reduce yield."
+    },
+    {
+      "id": "Q10",
+      "question": "How does FAO evaluate the risk that irrigation water will cause an infiltration problem?",
+      "gold_source": "S03_Water_quality_for_agriculture_-_Irrigation_and_Drainage_Paper_29_Rev._1.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["935c1f0ece7c2eb760a2", "b1368c08a4c3dec5cc8d"],
+      "ground_truth": "FAO evaluates infiltration risk from the combined effect of irrigation-water salinity (ECw) and sodium hazard, commonly expressed as the sodium adsorption ratio (SAR). Relatively high sodium or low calcium can reduce infiltration, especially in relation to salinity."
+    },
+    {
+      "id": "Q11",
+      "question": "Why is leaching a key practice for controlling salinity in irrigated soils?",
+      "gold_source": "S03_Water_quality_for_agriculture_-_FAO_Irrigation_and_Drainage_Paper_29_Rev._1.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["212f306e82a9b4c6c200", "f6cde5df29a427403377"],
+      "ground_truth": "Leaching applies enough extra water to move soluble salts below the crop root zone. Over time, salt removal by leaching must equal or exceed salt additions from irrigation water to prevent damaging accumulation."
+    },
+    {
+      "id": "Q12",
+      "question": "How can crop selection help manage saline irrigation conditions?",
+      "gold_source": "S03_Water_quality_for_agriculture_-_FAO_Irrigation_and_Drainage_Paper_29_Rev._1.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["39ddc15184df7d7d3728", "fb31be4fafe3f5927f5f"],
+      "ground_truth": "When salinity cannot be kept within the tolerance of a sensitive crop, switching to a more salt-tolerant crop can maintain production with a lower practical leaching requirement. Crop tolerance data are used to support this choice."
+    },
+    {
+      "id": "Q13",
+      "question": "What is deficit irrigation?",
+      "gold_source": "S04_Deficit_irrigation_practices_-_Water_Reports_22.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["68e1f0fcf26a24089d39", "eb60a385d96f2f3326a5"],
+      "ground_truth": "Deficit irrigation is an irrigation practice in which water supply is deliberately reduced below maximum or full crop-water levels so that controlled or mild water stress is allowed with minimal effects on yield."
+    },
+    {
+      "id": "Q14",
+      "question": "What is the main objective of deficit irrigation management?",
+      "gold_source": "S04_Deficit_irrigation_practices_-_Water_Reports_22.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["61615f9a46297aee9ef3", "68e1f0fcf26a24089d39"],
+      "ground_truth": "The main objective is to increase water-use efficiency by eliminating irrigations that have little effect on yield. Under scarce water, this can provide better use of limited water and may improve economic returns."
+    },
+    {
+      "id": "Q15",
+      "question": "Why does the timing of a water deficit matter during different crop growth stages?",
+      "gold_source": "S04_Deficit_irrigation_practices_-_Water_Reports_22.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["78efe56210635a7a4ab3", "bd73bc760bb5037e66b9"],
+      "ground_truth": "Crop sensitivity to water stress changes with growth stage. Therefore, the yield response to a deficit depends on when the deficit occurs, and timing can be used to schedule limited water toward more sensitive periods."
+    },
+    {
+      "id": "Q16",
+      "question": "How does FAO define water harvesting?",
+      "gold_source": "S05_Water_harvesting_-_manual_for_design_and_construction.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["9f2c2b1df3f038b6107f", "212e4c275d4a8951b25d"],
+      "ground_truth": "Water harvesting is the collection of runoff for productive use. Instead of allowing runoff to be lost or cause erosion, it is captured and used for purposes such as crop, fodder, tree, domestic, or livestock water supply."
+    },
+    {
+      "id": "Q17",
+      "question": "What is the difference between rainwater harvesting and floodwater harvesting?",
+      "gold_source": "S05_Water_harvesting_-_manual_for_design_and_construction.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["9f2c2b1df3f038b6107f", "2874539021e1990a9377"],
+      "ground_truth": "Rainwater harvesting collects runoff from roofs or ground surfaces, while floodwater harvesting collects discharges from intermittent or ephemeral watercourses."
+    },
+    {
+      "id": "Q18",
+      "question": "At which crop stages can extra moisture from water harvesting be especially valuable?",
+      "gold_source": "S05_Water_harvesting_-_manual_for_design_and_construction.md",
+      "must_contain": "",
+      "gold_chunk_ids": ["b28998621ce0075b3b6e"],
+      "ground_truth": "Extra moisture can be particularly valuable around sowing for germination and establishment, during mid-season dry spells, and at critical flowering and grain-filling stages."
+    },
+    {
+      "id": "Q19",
+      "question": "What are the three main objectives of climate-smart agriculture?",
+      "gold_source": "S14_Climate-Smart_Agriculture_training_manual.pdf",
+      "must_contain": "",
+      "gold_chunk_ids": ["977c7d072cd0a1466bac", "8115b14f4b9d9d6b3aa4"],
+      "ground_truth": "Climate-smart agriculture has three main objectives: sustainably increase agricultural productivity and incomes; adapt and build resilience to climate change; and reduce and/or remove greenhouse-gas emissions where possible."
+    },
+    {
+      "id": "Q20",
+      "question": "Which key strategies does FAO identify for making agricultural systems more resilient to climate change?",
+      "gold_source": "S09_Climate-Smart_Agriculture_Sourcebook.pdf",
+      "must_contain": "",
+      "gold_chunk_ids": ["531e45e119cc925b7bed"],
+      "ground_truth": "Key strategies include sustainable soil and water management, active promotion of biodiversity, and diversification of income sources inside and outside the farm."
+    },
+    {
+      "id": "Q21",
+      "question": "What are the main components used to understand a farm system's vulnerability and resilience to climate change?",
+      "gold_source": "S14_Climate-Smart_Agriculture_training_manual.pdf",
+      "must_contain": "",
+      "gold_chunk_ids": ["dd64844d9eef1324d784", "35377bb0a3d92d6cf5b4"],
+      "ground_truth": "Vulnerability is commonly analysed through exposure, sensitivity, and adaptive capacity. Resilience can be strengthened by reducing exposure and sensitivity and by increasing adaptive capacity."
+    },
+    {
+      "id": "Q22",
+      "question": "How can windbreaks and no-tillage practices reduce a farm's exposure to climate-related shocks?",
+      "gold_source": "S14_Climate-Smart_Agriculture_training_manual.pdf",
+      "must_contain": "",
+      "gold_chunk_ids": ["a3f5cc1bd488fe138080"],
+      "ground_truth": "The training manual gives healthy windbreaks, hedgerows, and no-tillage as measures that can reduce farm exposure by helping soil remain in place and resist erosion."
+    },
+    {
+      "id": "Q23",
+      "question": "What are the three linked principles of Conservation Agriculture?",
+      "gold_source": "S11_Conservation_Agriculture_Training_Guide.pdf",
+      "must_contain": "",
+      "gold_chunk_ids": ["3d0e2eaa0ec65524bbf4"],
+      "ground_truth": "The three principles are continuous minimum mechanical soil disturbance, permanent organic soil cover with crop residues and/or cover crops, and species diversification through crop rotations, sequences, or associations."
+    },
+    {
+      "id": "Q24",
+      "question": "How does permanent organic soil cover help conserve soil moisture?",
+      "gold_source": "S11_Conservation_Agriculture_Training_Guide.pdf",
+      "must_contain": "",
+      "gold_chunk_ids": ["80878534988dd44959eb", "444e475cf9e198aabe9f", "479cfd8a761d735c2fd4"],
+      "ground_truth": "Organic surface cover improves capture and use of rainfall by increasing water absorption and infiltration and decreasing evaporation from the soil surface; it also helps reduce runoff and erosion."
+    },
+    {
+      "id": "Q25",
+      "question": "How can Conservation Agriculture support climate-smart farming in dry areas?",
+      "gold_source": "S21_Climate-smart_agriculture_-_conservation_agriculture_practice_brief.pdf",
+      "must_contain": "",
+      "gold_chunk_ids": ["6cb1362e64fd3ba859b0", "1063d54a07bc9b96e6c0"],
+      "ground_truth": "Conservation Agriculture can increase water productivity in dry areas, buffer farms against decreasing or more erratic rainfall, reduce erosion, and under suitable conditions contribute to climate mitigation through soil-carbon or greenhouse-gas effects."
+    },
+    {
+      "id": "Q26",
+      "question": "Which basic soil physical and chemical properties are covered by FAO's rapid soil-testing manual?",
+      "gold_source": "S10_Soil_testing_methods_manual_-_Global_Soil_Doctors_Programme.pdf",
+      "must_contain": "",
+      "gold_chunk_ids": ["e9c421ed27f8c9fdf49a", "01a97a726f6ac5f72b4c"],
+      "ground_truth": "The manual covers physical properties such as soil texture, bulk density, and soil moisture, and chemical properties including soil pH and salinity measured through electrical conductivity, among other field indicators."
+    },
+    {
+      "id": "Q27",
+      "question": "How does soil organic matter improve soil structure, water management, and nutrient retention?",
+      "gold_source": "S12_Manual_on_integrated_soil_management_and_conservation_practices.pdf",
+      "must_contain": "",
+      "gold_chunk_ids": ["77e50e2c42b6a20f07ed"],
+      "ground_truth": "Soil organic matter helps form a stable soil structure, increases water-holding capacity, improves nutrient retention through cation exchange, and supports soil organisms that improve aeration, infiltration, and permeability."
+    },
+    {
+      "id": "Q28",
+      "question": "What are the main objectives of an Early Warning–Early Action plan for agricultural drought?",
+      "gold_source": "S13_Practical_guidelines_for_Early_Warning_-_Early_Action_plans_on_agricultural_drought.pdf",
+      "must_contain": "",
+      "gold_chunk_ids": ["a5af64f7796a4f55a38a", "8061d5e836d5240ff94b"],
+      "ground_truth": "An Early Warning–Early Action plan is intended to identify actions that can be taken at different alert levels before an emergency, coordinate the capacities and actions of relevant institutions, and enable rapid, effective action using an agreed ex-ante plan."
+    },
+    {
+      "id": "Q29",
+      "question": "Why is proactive drought-risk management preferred to a purely reactive crisis response?",
+      "gold_source": "S17_Drought_characteristics_and_management_in_North_Africa_and_the_Near_East.pdf",
+      "must_contain": "",
+      "gold_chunk_ids": ["1d9bd5ad0a3bda56d952", "71a3946c9f12a3141fcc", "31acfeea36dcaf5298b9"],
+      "ground_truth": "Proactive drought management emphasizes preparedness, mitigation, risk management, and early warning rather than waiting for a crisis. The source notes that preventive or mitigating responses can be cheaper than providing relief after drought impacts occur."
+    },
+    {
+      "id": "Q30",
+      "question": "What are water accounting and water auditing, and how do they support water governance?",
+      "gold_source": "S24_Water_accounting_and_auditing_for_better_water_governance.pdf",
+      "must_contain": "",
+      "gold_chunk_ids": ["2d1be3a5cdae56595a79", "5621a0a80acc22e21590"],
+      "ground_truth": "Water accounting systematically studies the hydrological cycle and trends in water supply, demand, accessibility, and use. Water auditing places that information in the broader context of governance, institutions, expenditure, legislation, and political economy. Together they provide an evidence base for better water governance and management."
+    }
   ]
 }

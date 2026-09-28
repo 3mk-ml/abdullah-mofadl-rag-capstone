@@ -190,6 +190,18 @@ Use `user_testing.md`. Test the live app with three actual people and record wha
 
 ## 8. RAGAS evaluation
 
+### GitHub Actions RAGAS workflow
+
+A manual workflow is included at `.github/workflows/ragas.yml`.
+
+Before running it, add a repository Actions secret named `OPENAI_API_KEY` under:
+
+`Settings -> Secrets and variables -> Actions -> New repository secret`
+
+Then open **Actions -> Run 20-question RAGAS evaluation -> Run workflow**. The workflow rebuilds the verified corpus/index, confirms Recall@5 is still >=80%, runs RAGAS on 20 reviewed questions, and uploads `ragas_report.csv` plus `ragas_summary.json`.
+
+
+
 After retrieval is stable and Recall@5 has cleared the target, run RAGAS **once** on 20 reviewed questions to protect the API balance:
 
 ```bash

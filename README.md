@@ -238,7 +238,7 @@ Fill this only after real runs:
 
 | Metric | Result |
 |---|---:|
-| Recall@5, 30 questions | TBD |
+| Recall@5, 30 questions | **90.00% (27/30)** |
 | RAGAS faithfulness | TBD |
 | RAGAS answer relevancy | TBD |
 | RAGAS context precision | TBD |
@@ -263,8 +263,8 @@ Fill this after experiments:
 - [ ] `data/eval/ragas_report.csv` generated from 20 reviewed questions
 - [ ] `cost_analysis.md` updated with measured tokens and all 3 scenarios
 - [ ] 20–50 high-quality documents in the final corpus
-- [ ] 30 manually verified golden questions
-- [ ] Recall@5 >= 80%
+- [x] 30 manually verified golden questions
+- [x] Recall@5 >= 80% (**90.00%**)
 - [ ] Authentication enabled
 - [ ] Arabic RTL/Amiri works if Arabic is used
 - [ ] Three real-user tests documented
@@ -273,3 +273,16 @@ Fill this after experiments:
 ## Safety and scope
 
 AgriRAG is an educational and decision-support assistant. It must not fabricate agronomic thresholds, chemical doses, or farm-specific prescriptions. When evidence is missing or conflicting, the correct behavior is to say that the provided corpus is insufficient and show the available sources.
+
+
+## Verified retrieval evaluation
+
+GitHub Actions run [#7](https://github.com/3mk-ml/abdullah-mofadl-rag-capstone/actions/runs/36487406502) evaluated the final hybrid retrieval pipeline against 30 manually verified questions using exact gold chunk IDs.
+
+- **Recall@5: 90.00% (27/30)**
+- Required threshold: **>= 80%**
+- Result: **passed**
+- Indexed corpus: **20 documents, 1,828 extracted units, 5,540 chunks**
+- Evaluation report: `data/eval/recall_at_5_report.json`
+
+The three strict-ID misses were Q03, Q12, and Q24. The score is retained as measured rather than relabelled after observing retrieved results.

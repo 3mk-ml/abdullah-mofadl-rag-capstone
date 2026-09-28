@@ -3,14 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable
 
-import fitz  # PyMuPDF
+import pymupdf  # PyMuPDF
 
 from .models import Chunk
 from .text_utils import normalize_text
 
 
 def iter_pdf_pages(path: Path) -> Iterable[tuple[int, str]]:
-    doc = fitz.open(path)
+    doc = pymupdf.open(path)
     try:
         for i, page in enumerate(doc):
             text = normalize_text(page.get_text("text") or "")

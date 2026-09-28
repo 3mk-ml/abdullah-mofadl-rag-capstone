@@ -2,6 +2,10 @@ name: Run 20-question RAGAS evaluation
 
 on:
   workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "data/eval/run_ragas.trigger"
 
 jobs:
   ragas:

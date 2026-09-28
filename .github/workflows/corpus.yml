@@ -8,6 +8,7 @@ on:
       - "scripts/**"
       - "tests/**"
       - "data/sources_manifest.csv"
+      - "data/eval/**"
       - "requirements.txt"
       - "app.py"
       - ".github/workflows/corpus.yml"
@@ -15,7 +16,7 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 55
     env:
       TOKENIZERS_PARALLELISM: "false"
       HF_HOME: ~/.cache/huggingface
@@ -58,7 +59,6 @@ jobs:
           test -f data/index/bm25.pkl
           test -d data/index/chroma
           python - <<'PY'
-          import json
           from pathlib import Path
           chunks = Path("data/index/chunks.jsonl")
           count = sum(1 for line in chunks.open(encoding="utf-8") if line.strip())
@@ -66,6 +66,10 @@ jobs:
           if count < 100:
               raise SystemExit("Index contains unexpectedly few chunks")
           PY
+
+      - name: Evaluate verified Recall@5
+        run: |
+          python scripts/evaluate_recall.py             --golden data/eval/golden_questions.json             --k 5             --fail-below 0.80
 
       - name: Boot Streamlit and verify HTTP response
         run: |
@@ -81,13 +85,14 @@ jobs:
           cat streamlit.log
           exit 1
 
-      - name: Upload corpus and index artifacts
+      - name: Upload corpus, index, and evaluation artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: agrirag-corpus-and-index
+          name: agrirag-corpus-index-evaluation
           path: |
             data/raw/
             data/index/
+            data/eval/recall_at_5_report.json
             streamlit.log
           retention-days: 7

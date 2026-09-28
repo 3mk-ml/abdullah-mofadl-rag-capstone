@@ -1,1 +1,1 @@
-Trigger the one-shot 20-question RAGAS evaluation after OPENAI_API_KEY is configured.
+Retry RAGAS after pinning ragas==0.4.3 and fixing modern imports.

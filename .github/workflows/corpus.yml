@@ -1,38 +1,93 @@
-name: Validate agricultural corpus
+name: Run AgriRAG project validation
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - "scripts/download_corpus.py"
+      - "src/**"
+      - "scripts/**"
+      - "tests/**"
       - "data/sources_manifest.csv"
+      - "requirements.txt"
+      - "app.py"
       - ".github/workflows/corpus.yml"
 
 jobs:
-  corpus:
+  validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
+    timeout-minutes: 45
+    env:
+      TOKENIZERS_PARALLELISM: "false"
+      HF_HOME: ~/.cache/huggingface
+      APP_PASSWORD: ci-test-password
 
-      - uses: actions/setup-python@v5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      - name: Install lightweight corpus dependencies
+      - name: Install project dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4 PyMuPDF
+          pip install -r requirements.txt
 
-      - name: Download curated documents
+      - name: Compile Python sources
+        run: |
+          python -m compileall app.py src scripts tests
+
+      - name: Run smoke tests
+        run: pytest -q
+
+      - name: Download curated agricultural corpus
         run: python scripts/download_corpus.py
 
-      - name: Check extraction and document count
+      - name: Validate corpus extraction
         run: python scripts/check_corpus.py
 
-      - name: Upload corpus as workflow artifact
+      - name: Build hybrid retrieval index
+        run: python scripts/ingest.py
+
+      - name: Verify generated index files
+        run: |
+          test -f data/index/chunks.jsonl
+          test -f data/index/bm25.pkl
+          test -d data/index/chroma
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          chunks = Path("data/index/chunks.jsonl")
+          count = sum(1 for line in chunks.open(encoding="utf-8") if line.strip())
+          print(f"Indexed chunks: {count}")
+          if count < 100:
+              raise SystemExit("Index contains unexpectedly few chunks")
+          PY
+
+      - name: Boot Streamlit and verify HTTP response
+        run: |
+          streamlit run app.py --server.headless true --server.port 8501 > streamlit.log 2>&1 &
+          echo $! > streamlit.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8501 >/dev/null; then
+              echo "Streamlit responded successfully"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat streamlit.log
+          exit 1
+
+      - name: Upload corpus and index artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: agrirag-curated-corpus
-          path: data/raw/
+          name: agrirag-corpus-and-index
+          path: |
+            data/raw/
+            data/index/
+            streamlit.log
           retention-days: 7

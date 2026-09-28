@@ -1,0 +1,38 @@
+name: Validate agricultural corpus
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/download_corpus.py"
+      - "data/sources_manifest.csv"
+      - ".github/workflows/corpus.yml"
+
+jobs:
+  corpus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install lightweight corpus dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 PyMuPDF
+
+      - name: Download curated documents
+        run: python scripts/download_corpus.py
+
+      - name: Check extraction and document count
+        run: python scripts/check_corpus.py
+
+      - name: Upload corpus as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agrirag-curated-corpus
+          path: data/raw/
+          retention-days: 7

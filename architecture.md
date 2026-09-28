@@ -9,7 +9,7 @@
 `Question -> multilingual query embedding -> vector top-k + BM25 top-k -> Reciprocal Rank Fusion -> multilingual cross-encoder reranker -> top 5 evidence chunks -> LLM answer with citations`
 
 ## 2. Chunking decision
-**Choice:** recursive structure-aware chunking, initial target about 700 tokens with about 100-token overlap, then tune against Recall@5.
+**Choice:** recursive structure-aware chunking, initial target about 350 tokens with about 60-token overlap, then tune against Recall@5.
 
 **Why it fits this corpus:** FAO/ICARDA manuals contain long technical paragraphs, numbered sections, equations, and page-level concepts. Fixed-size splitting can cut an irrigation rule away from its explanation. Recursive splitting tries paragraph and sentence boundaries first while keeping a controlled maximum size.
 

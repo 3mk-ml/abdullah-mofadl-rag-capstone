@@ -1,0 +1,26 @@
+source_id,title,organization,topic,url,status
+S01,Crop evapotranspiration - FAO Irrigation and Drainage Paper 56,FAO,crop water requirements,https://www.fao.org/4/x0490e/x0490e00.htm,pending_download
+S02,Crop yield response to water - FAO Irrigation and Drainage Paper 66,FAO,crop water stress,https://www.fao.org/4/i2800e/i2800e00.htm,pending_download
+S03,Water quality for agriculture - Irrigation and Drainage Paper 29 Rev. 1,FAO,water quality salinity,https://www.fao.org/4/t0234e/t0234e00.htm,pending_download
+S04,Deficit irrigation practices - Water Reports 22,FAO,deficit irrigation,https://www.fao.org/4/y3655e/y3655e00.htm,pending_download
+S05,Water harvesting - manual for design and construction,FAO,water harvesting,https://www.fao.org/4/u3160e/u3160e00.htm,pending_download
+S06,Climate-Smart Agriculture Sourcebook,FAO,climate smart agriculture,https://www.fao.org/4/i3325e/i3325e.pdf,pending_download
+S07,Plant nutrition for food security - integrated nutrient management,FAO,plant nutrition,https://www.fao.org/4/a0443e/a0443e00.htm,pending_download
+S08,Soil testing methods manual - Global Soil Doctors Programme,FAO,soil testing,http://www.fao.org/3/ca2796en/CA2796EN.pdf,pending_download
+S09,Conservation Agriculture Training Guide,FAO,soil water conservation,https://www.fao.org/3/i7154en/i7154en.pdf,pending_download
+S10,Technical Handbook on Pressurized Irrigation Techniques,FAO,pressurized irrigation,https://www.fao.org/4/a1336e/a1336e00.htm,pending_download
+S11,Irrigation Manual Vol 1 - Irrigation Development: a Multifaceted Process,FAO,irrigation fundamentals,https://www.fao.org/land-water/resources/publications/results/en/?ipp=10&page=48,pending_download
+S12,Irrigation Manual Vol 2 - Natural Resources Assessment,FAO,natural resources,https://www.fao.org/land-water/resources/publications/results/en/?ipp=10&page=48,pending_download
+S13,Irrigation Manual Vol 3 - Agronomic Aspects of Irrigated Crop Production,FAO,irrigated agronomy,https://www.fao.org/land-water/resources/publications/results/en/?ipp=10&page=48,pending_download
+S14,Irrigation Manual Vol 4 - Crop Water Requirements and Irrigation Scheduling,FAO,irrigation scheduling,https://www.fao.org/land-water/resources/publications/results/en/?ipp=10&page=48,pending_download
+S15,Irrigation Manual Vol 5 - Irrigation Pumping Plant,FAO,irrigation systems,https://www.fao.org/land-water/resources/publications/results/en/?ipp=10&page=48,pending_download
+S16,Irrigation Manual Vol 7 - Surface Irrigation Systems,FAO,surface irrigation,https://www.fao.org/4/ai596e/ai596e00.htm,pending_download
+S17,Irrigation Manual Vol 8 - Sprinkler Irrigation Systems,FAO,sprinkler irrigation,https://www.fao.org/land-water/resources/publications/results/en/?ipp=10&page=48,pending_download
+S18,Irrigation Scheduling Reference Manual,FAO,irrigation scheduling,https://agris.fao.org/search/en/providers/123818/records/691dca3249e41686f7931343,pending_download
+S19,A Soil and Plant Analysis Manual Adapted for West Asia and North Africa,ICARDA,soil plant analysis,https://hdl.handle.net/20.500.11766/66995,pending_download
+S20,Supplemental Irrigation: A Promising Climate-resilience Practice for Sustainable Dryland Agriculture,ICARDA,supplemental irrigation,https://icarda.org/publications/4573/supplemental-irrigation-promising-climate-resilience-practice-sustainable-dryland,pending_download
+S21,Supplemental Irrigation: A Highly Efficient Water-Use Practice,ICARDA,supplemental irrigation,https://repo.mel.cgiar.org/handle/20.500.11766/7524,pending_download
+S22,Managing Scarce Water Resources in the Drylands of West Asia and North Africa,ICARDA,dryland water management,https://icarda.org/publications/32310/managing-scarce-water-resources-drylands-west-asia-and-north-africa-review-joint,pending_download
+S23,Water management - agricultural practices and technologies for resilience,ICARDA/CGIAR,water management,https://icarda.org/publications/5111/water-management,pending_download
+S24,Yemen Country Climate and Development Report,World Bank,Yemen climate agriculture,https://www.worldbank.org/en/country/yemen/publication/yemen-country-climate-and-development-report,pending_download
+S25,Water for Food: Modernizing Agriculture for a Climate-Smart Future,World Bank,water agriculture,https://documents.worldbank.org/en/publication/documents-reports/documentdetail/099121924041510940,pending_download

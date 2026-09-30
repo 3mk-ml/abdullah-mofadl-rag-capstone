@@ -1,1 +1,1 @@
-Retry RAGAS after pinning langchain-community>=0.4.1,<0.4.2 for RAGAS 0.4.3.
+Retry RAGAS with Gemini API key configured. HF token is optional; public Hugging Face models may download anonymously.

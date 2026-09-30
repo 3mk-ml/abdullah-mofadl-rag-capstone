@@ -19,8 +19,19 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-small")
 RERANKER_MODEL = os.getenv(
     "RERANKER_MODEL", "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
 )
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai").strip().lower()
+
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.6-luna")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+GEMINI_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
+GEMINI_BASE_URL = os.getenv(
+    "GEMINI_BASE_URL",
+    "https://generativelanguage.googleapis.com/v1beta/openai/",
+)
+
 APP_PASSWORD = os.getenv("APP_PASSWORD", "")
 
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "350"))

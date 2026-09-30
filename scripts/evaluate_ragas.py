@@ -26,9 +26,6 @@ from src.config import (
 )
 from src.rag_pipeline import ask
 
-
-# RAGAS 0.4.3 modern component API. Import from the concrete modules so that
-# CI shows the real failing import instead of hiding it behind a generic error.
 from ragas.llms.base import llm_factory
 from ragas.embeddings.base import embedding_factory
 from ragas.metrics.collections.faithfulness import Faithfulness
@@ -76,27 +73,65 @@ async def score_item(item: dict, result: dict, scorers: dict) -> dict:
     }
 
 
-async def run(golden_path: Path, out_csv: Path, evaluator_model: str) -> None:
+def save_checkpoint(path: Path, provider: str, model: str, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "llm_provider": provider,
+        "evaluator_model": model,
+        "completed": len(rows),
+        "rows": rows,
+    }
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+def load_checkpoint(path: Path, provider: str, model: str) -> list[dict]:
+    if not path.exists():
+        return []
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    if (
+        payload.get("llm_provider") != provider
+        or payload.get("evaluator_model") != model
+    ):
+        print("Ignoring checkpoint from a different provider/model.", flush=True)
+        return []
+    rows = payload.get("rows") or []
+    print(f"Resuming from checkpoint: {len(rows)} completed question(s).", flush=True)
+    return rows
+
+
+async def run(
+    golden_path: Path,
+    out_csv: Path,
+    evaluator_model: str,
+    checkpoint_path: Path,
+) -> None:
     if LLM_PROVIDER == "groq":
         if not GROQ_API_KEY:
             raise SystemExit("GROQ_API_KEY is not set")
         api_key = GROQ_API_KEY
         base_url = GROQ_BASE_URL
-        # RAGAS answer relevancy uses the same local E5 family as the retriever.
-        # This avoids a paid embedding API and the HF model is public.
         embedding_model = "intfloat/multilingual-e5-small"
+        ragas_provider = "groq"
     elif LLM_PROVIDER == "gemini":
         if not GEMINI_API_KEY:
             raise SystemExit("GEMINI_API_KEY is not set")
         api_key = GEMINI_API_KEY
         base_url = GEMINI_BASE_URL
         embedding_model = GEMINI_EMBEDDING_MODEL
+        ragas_provider = "openai"
     elif LLM_PROVIDER == "openai":
         if not OPENAI_API_KEY:
             raise SystemExit("OPENAI_API_KEY is not set")
         api_key = OPENAI_API_KEY
         base_url = None
         embedding_model = "text-embedding-3-small"
+        ragas_provider = "openai"
     else:
         raise SystemExit(
             f"Unsupported LLM_PROVIDER={LLM_PROVIDER!r}; "
@@ -104,10 +139,10 @@ async def run(golden_path: Path, out_csv: Path, evaluator_model: str) -> None:
         )
 
     import ragas
-    print(f"RAGAS version: {getattr(ragas, '__version__', 'unknown')}")
-    print(f"LLM provider: {LLM_PROVIDER}")
-    print(f"Evaluator model: {evaluator_model}")
-    print(f"Evaluator embedding model: {embedding_model}")
+    print(f"RAGAS version: {getattr(ragas, '__version__', 'unknown')}", flush=True)
+    print(f"LLM provider: {LLM_PROVIDER}", flush=True)
+    print(f"Evaluator model: {evaluator_model}", flush=True)
+    print(f"Evaluator embedding model: {embedding_model}", flush=True)
 
     raw = json.loads(golden_path.read_text(encoding="utf-8"))
     items = raw["questions"] if isinstance(raw, dict) else raw
@@ -120,17 +155,17 @@ async def run(golden_path: Path, out_csv: Path, evaluator_model: str) -> None:
         client_kwargs["base_url"] = base_url
     client = AsyncOpenAI(**client_kwargs)
 
-    # RAGAS uses an OpenAI-compatible client adapter. For Groq and Gemini,
-    # the client points at the provider's OpenAI-compatible base URL.
-    evaluator_max_tokens = int(os.getenv("RAGAS_MAX_TOKENS", "512"))
-    print(f"RAGAS evaluator max tokens/request: {evaluator_max_tokens}")
+    evaluator_max_tokens = int(os.getenv("RAGAS_MAX_TOKENS", "900"))
+    print(
+        f"RAGAS evaluator max tokens/request: {evaluator_max_tokens}",
+        flush=True,
+    )
 
     evaluator_llm = llm_factory(
         evaluator_model,
-        provider="openai",
+        provider=ragas_provider,
         client=client,
         max_tokens=evaluator_max_tokens,
-        reasoning_effort="low" if LLM_PROVIDER == "groq" else None,
     )
 
     if LLM_PROVIDER == "groq":
@@ -156,21 +191,48 @@ async def run(golden_path: Path, out_csv: Path, evaluator_model: str) -> None:
         "context_recall": ContextRecall(llm=evaluator_llm),
     }
 
-    rows: list[dict] = []
+    rows = load_checkpoint(
+        checkpoint_path,
+        provider=LLM_PROVIDER,
+        model=evaluator_model,
+    )
+    done_ids = {r.get("id") for r in rows}
+
     for i, item in enumerate(items, start=1):
-        print(f"Generating answer {i}/20: {item['id']}")
+        if item.get("id") in done_ids:
+            print(f"[{i:02d}/20] checkpoint HIT {item['id']} - skipping", flush=True)
+            continue
+
+        print(f"[{i:02d}/20] Generating answer: {item['id']}", flush=True)
         rag_result = ask(item["question"], top_n=5)
         row = await score_item(item, rag_result, scorers)
         rows.append(row)
+        done_ids.add(item.get("id"))
+
+        # Save immediately so a quota/rate-limit failure never loses completed work.
+        save_checkpoint(
+            checkpoint_path,
+            provider=LLM_PROVIDER,
+            model=evaluator_model,
+            rows=rows,
+        )
+
         print(
-            f"Scored {i}/20 {item['id']}: "
+            f"[{i:02d}/20] Scored {item['id']}: "
             f"faith={row['faithfulness']:.3f}, "
             f"relevancy={row['answer_relevancy']:.3f}, "
             f"precision={row['context_precision']:.3f}, "
-            f"recall={row['context_recall']:.3f}"
+            f"recall={row['context_recall']:.3f}",
+            flush=True,
         )
 
+    order = {item["id"]: idx for idx, item in enumerate(items)}
+    rows.sort(key=lambda r: order.get(r.get("id", ""), 999))
     df = pd.DataFrame(rows)
+
+    if len(df) != 20:
+        raise SystemExit(f"Expected 20 completed RAGAS rows, found {len(df)}.")
+
     out_csv.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out_csv, index=False)
 
@@ -195,10 +257,11 @@ async def run(golden_path: Path, out_csv: Path, evaluator_model: str) -> None:
         encoding="utf-8",
     )
 
-    print("\nRAGAS summary:")
-    print(json.dumps(summary, indent=2))
-    print(f"Saved: {out_csv}")
-    print(f"Saved: {summary_path}")
+    print("\nRAGAS summary:", flush=True)
+    print(json.dumps(summary, indent=2), flush=True)
+    print(f"Saved: {out_csv}", flush=True)
+    print(f"Saved: {summary_path}", flush=True)
+    print(f"Checkpoint: {checkpoint_path}", flush=True)
 
 
 def main() -> None:
@@ -213,15 +276,29 @@ def main() -> None:
         type=Path,
         default=Path("data/eval/ragas_report.csv"),
     )
+    parser.add_argument(
+        "--checkpoint",
+        type=Path,
+        default=Path("data/eval/ragas_checkpoint.json"),
+    )
+
     if LLM_PROVIDER == "groq":
         default_model = GROQ_MODEL
     elif LLM_PROVIDER == "gemini":
         default_model = GEMINI_MODEL
     else:
         default_model = OPENAI_MODEL
+
     parser.add_argument("--evaluator-model", default=default_model)
     args = parser.parse_args()
-    asyncio.run(run(args.golden, args.out, args.evaluator_model))
+    asyncio.run(
+        run(
+            args.golden,
+            args.out,
+            args.evaluator_model,
+            args.checkpoint,
+        )
+    )
 
 
 if __name__ == "__main__":

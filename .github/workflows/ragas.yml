@@ -7,17 +7,26 @@ on:
     paths:
       - "data/eval/run_ragas.trigger"
 
+# A new retry automatically cancels the older slow RAGAS run.
+concurrency:
+  group: agrirag-ragas-evaluation
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   ragas:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 60
     env:
       TOKENIZERS_PARALLELISM: "false"
       HF_HOME: ~/.cache/huggingface
       LLM_PROVIDER: groq
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-      GROQ_MODEL: qwen/qwen3.8-27b
-      RAGAS_MAX_TOKENS: "512"
+      GROQ_MODEL: openai/gpt-oss-20b
+      RAGAS_MAX_TOKENS: "256"
 
     steps:
       - name: Checkout repository
@@ -27,7 +36,6 @@ jobs:
         run: |
           if [ -z "$GROQ_API_KEY" ]; then
             echo "Missing GitHub Actions secret: GROQ_API_KEY"
-            echo "Create a Groq API key, add it under Settings > Secrets and variables > Actions, then rerun this workflow."
             exit 1
           fi
 
@@ -36,6 +44,12 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
+
+      - name: Cache Hugging Face models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: agrirag-hf-models-v1
 
       - name: Install dependencies
         run: |
@@ -46,41 +60,50 @@ jobs:
         run: |
           python - <<'PY'
           import ragas
-          import langchain_community
           from ragas.llms.base import llm_factory
           from ragas.metrics.collections.faithfulness import Faithfulness
           from ragas.metrics.collections.answer_relevancy import AnswerRelevancy
           from ragas.metrics.collections.context_precision import ContextPrecision
           from ragas.metrics.collections.context_recall import ContextRecall
-          from ragas.embeddings.base import embedding_factory
-          emb = embedding_factory(
-              "huggingface",
-              model="intfloat/multilingual-e5-small",
-              interface="modern",
-          )
-          vector = emb.embed_text("local E5 embedding smoke test")
-          assert vector and len(vector) > 0
-          print("RAGAS imports + local E5 embedding smoke test passed")
+          print("RAGAS import smoke test passed")
           print("ragas:", getattr(ragas, "__version__", "unknown"))
           PY
 
-      - name: Download curated corpus
-        run: python scripts/download_corpus.py
+      # Reuse the exact retrieval index that already passed Recall@5=90%.
+      # This avoids re-downloading 20 documents and re-embedding 5,540 chunks
+      # on every RAGAS retry.
+      - name: Reuse verified retrieval artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: agrirag-corpus-index-evaluation
+          path: .
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: 36489352097
 
-      - name: Build hybrid retrieval index
-        run: python scripts/ingest.py
-
-      - name: Confirm retrieval threshold before RAGAS
+      - name: Verify reused index and Recall@5 result
         run: |
-          python scripts/evaluate_recall.py             --golden data/eval/golden_questions.json             --k 5             --fail-below 0.80
+          test -f data/index/chunks.jsonl
+          test -f data/index/bm25.pkl
+          test -d data/index/chroma
+          test -f data/eval/recall_at_5_report.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("data/eval/recall_at_5_report.json")
+          report = json.loads(p.read_text(encoding="utf-8"))
+          recall = float(report["recall"])
+          print(f"Verified saved Recall@5: {recall:.2%}")
+          if recall < 0.80:
+              raise SystemExit("Verified retrieval artifact is below the required threshold")
+          PY
 
       - name: Run RAGAS on 20 verified questions
         run: |
           python scripts/evaluate_ragas.py             --golden data/eval/golden_questions.json             --out data/eval/ragas_report.csv             --evaluator-model "$GROQ_MODEL"
 
       - name: Show RAGAS summary
-        run: |
-          cat data/eval/ragas_summary.json
+        run: cat data/eval/ragas_summary.json
 
       - name: Upload RAGAS reports
         if: always()

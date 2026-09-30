@@ -1,1 +1,1 @@
-Retry optimized RAGAS with max_tokens=900 after Q01 structured faithfulness output was truncated at 256.
+Retry RAGAS on llama-3.1-8b-instant (500K TPD free plan) with per-question checkpoints and live output.

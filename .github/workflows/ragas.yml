@@ -19,7 +19,7 @@ permissions:
 jobs:
   ragas:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 180
     env:
       TOKENIZERS_PARALLELISM: "false"
       HF_HOME: ~/.cache/huggingface

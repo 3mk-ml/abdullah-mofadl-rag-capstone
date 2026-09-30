@@ -25,8 +25,8 @@ jobs:
       HF_HOME: ~/.cache/huggingface
       LLM_PROVIDER: groq
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-      GROQ_MODEL: openai/gpt-oss-20b
-      RAGAS_MAX_TOKENS: "900"
+      GROQ_MODEL: llama-3.1-8b-instant
+      RAGAS_MAX_TOKENS: "700"
 
     steps:
       - name: Checkout repository
@@ -99,8 +99,10 @@ jobs:
           PY
 
       - name: Run RAGAS on 20 verified questions
+        env:
+          PYTHONUNBUFFERED: "1"
         run: |
-          python scripts/evaluate_ragas.py             --golden data/eval/golden_questions.json             --out data/eval/ragas_report.csv             --evaluator-model "$GROQ_MODEL"
+          python scripts/evaluate_ragas.py             --golden data/eval/golden_questions.json             --out data/eval/ragas_report.csv             --checkpoint data/eval/ragas_checkpoint.json             --evaluator-model "$GROQ_MODEL"
 
       - name: Show RAGAS summary
         run: cat data/eval/ragas_summary.json
@@ -113,5 +115,6 @@ jobs:
           path: |
             data/eval/ragas_report.csv
             data/eval/ragas_summary.json
+            data/eval/ragas_checkpoint.json
             data/eval/recall_at_5_report.json
           retention-days: 30

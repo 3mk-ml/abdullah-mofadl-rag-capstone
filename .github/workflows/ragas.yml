@@ -40,6 +40,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Smoke-test RAGAS imports
+        run: |
+          python - <<'PY'
+          import ragas
+          import langchain_community
+          from ragas.llms.base import llm_factory
+          from ragas.metrics.collections.faithfulness import Faithfulness
+          from ragas.metrics.collections.answer_relevancy import AnswerRelevancy
+          from ragas.metrics.collections.context_precision import ContextPrecision
+          from ragas.metrics.collections.context_recall import ContextRecall
+          print("RAGAS import smoke test passed")
+          print("ragas:", getattr(ragas, "__version__", "unknown"))
+          PY
+
       - name: Download curated corpus
         run: python scripts/download_corpus.py
 

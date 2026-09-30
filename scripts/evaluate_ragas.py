@@ -8,9 +8,10 @@ import argparse
 import asyncio
 import json
 import os
+import re
 
 import pandas as pd
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, RateLimitError
 
 from src.config import (
     GEMINI_API_KEY,
@@ -34,30 +35,96 @@ from ragas.metrics.collections.context_precision import ContextPrecision
 from ragas.metrics.collections.context_recall import ContextRecall
 
 
+def _retry_delay_seconds(exc: Exception) -> float:
+    """Parse Groq's 'Please try again in XmYs' hint from a 429."""
+    message = str(exc)
+    match = re.search(
+        r"try again in\s+(?:(\d+)m)?([0-9.]+)s",
+        message,
+        flags=re.IGNORECASE,
+    )
+    if match:
+        minutes = int(match.group(1) or 0)
+        seconds = float(match.group(2))
+        return minutes * 60 + seconds
+    return 60.0
+
+
+async def _with_quota_wait(label: str, factory, max_waits: int = 8):
+    """Wait for Groq's rolling quota window instead of failing the workflow."""
+    waits = 0
+    while True:
+        try:
+            return await factory()
+        except RateLimitError as exc:
+            waits += 1
+            if waits > max_waits:
+                raise
+            delay = _retry_delay_seconds(exc) + 5.0
+            print(
+                f"Groq quota reached during {label}; "
+                f"waiting {delay:.1f}s then retrying automatically "
+                f"(wait {waits}/{max_waits}).",
+                flush=True,
+            )
+            await asyncio.sleep(delay)
+
+
+async def _ask_with_quota_wait(question: str, top_n: int = 5) -> dict:
+    waits = 0
+    while True:
+        try:
+            return await asyncio.to_thread(ask, question, top_n=top_n)
+        except RateLimitError as exc:
+            waits += 1
+            if waits > 8:
+                raise
+            delay = _retry_delay_seconds(exc) + 5.0
+            print(
+                f"Groq quota reached during answer generation; "
+                f"waiting {delay:.1f}s then retrying automatically "
+                f"(wait {waits}/8).",
+                flush=True,
+            )
+            await asyncio.sleep(delay)
+
+
 async def score_item(item: dict, result: dict, scorers: dict) -> dict:
     question = item["question"]
     reference = item["ground_truth"]
     response = result["answer"]
     contexts = [s["text"] for s in result["sources"]]
 
-    faith = await scorers["faithfulness"].ascore(
-        user_input=question,
-        response=response,
-        retrieved_contexts=contexts,
+    faith = await _with_quota_wait(
+        "faithfulness",
+        lambda: scorers["faithfulness"].ascore(
+            user_input=question,
+            response=response,
+            retrieved_contexts=contexts,
+        ),
     )
-    relevance = await scorers["answer_relevancy"].ascore(
-        user_input=question,
-        response=response,
+    relevance = await _with_quota_wait(
+        "answer relevancy",
+        lambda: scorers["answer_relevancy"].ascore(
+            user_input=question,
+            response=response,
+        ),
     )
-    precision = await scorers["context_precision"].ascore(
-        user_input=question,
-        reference=reference,
-        retrieved_contexts=contexts,
+    precision = await _with_quota_wait(
+        "context precision",
+        lambda: scorers["context_precision"].ascore(
+            user_input=question,
+            reference=reference,
+            retrieved_contexts=contexts,
+        ),
     )
-    recall = await scorers["context_recall"].ascore(
-        user_input=question,
-        reference=reference,
-        retrieved_contexts=contexts,
+    recall = await _with_quota_wait(
+        "context recall",
+        lambda: scorers["context_recall"].ascore(
+            user_input=question,
+            reference=reference,
+            retrieved_contexts=contexts,
+        ),
     )
 
     return {
@@ -228,7 +295,7 @@ async def run(
             continue
 
         print(f"[{i:02d}/20] Generating answer: {item['id']}", flush=True)
-        rag_result = ask(item["question"], top_n=5)
+        rag_result = await _ask_with_quota_wait(item["question"], top_n=5)
         row = await score_item(item, rag_result, scorers)
         rows.append(row)
         done_ids.add(item.get("id"))

@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import argparse
 import asyncio
 import json
+import os
 
 import pandas as pd
 from openai import AsyncOpenAI
@@ -121,10 +122,14 @@ async def run(golden_path: Path, out_csv: Path, evaluator_model: str) -> None:
 
     # RAGAS uses an OpenAI-compatible client adapter. For Groq and Gemini,
     # the client points at the provider's OpenAI-compatible base URL.
+    evaluator_max_tokens = int(os.getenv("RAGAS_MAX_TOKENS", "512"))
+    print(f"RAGAS evaluator max tokens/request: {evaluator_max_tokens}")
+
     evaluator_llm = llm_factory(
         evaluator_model,
         provider="openai",
         client=client,
+        max_tokens=evaluator_max_tokens,
     )
 
     if LLM_PROVIDER == "groq":
@@ -179,6 +184,8 @@ async def run(golden_path: Path, out_csv: Path, evaluator_model: str) -> None:
         **{k: float(v) for k, v in df[metric_cols].mean().to_dict().items()},
         "mean_latency_seconds": float(df["latency_seconds"].mean()),
         "evaluator_model": evaluator_model,
+        "evaluator_max_tokens": evaluator_max_tokens,
+        "llm_provider": LLM_PROVIDER,
     }
 
     summary_path = out_csv.with_name("ragas_summary.json")

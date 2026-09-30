@@ -1,1 +1,1 @@
-Retry RAGAS with active split-model setup: qwen/qwen3.8-27b generator + openai/gpt-oss-120b evaluator, checkpoint restore enabled.
+Resume RAGAS after Groq TPD retry window; restore checkpoint from run #11 and continue from Q13.

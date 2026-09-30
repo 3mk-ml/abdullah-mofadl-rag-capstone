@@ -14,18 +14,20 @@ jobs:
     env:
       TOKENIZERS_PARALLELISM: "false"
       HF_HOME: ~/.cache/huggingface
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      OPENAI_MODEL: gpt-5.6-luna
+      LLM_PROVIDER: gemini
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: gemini-3.8-flash
+      GEMINI_EMBEDDING_MODEL: gemini-embedding-001
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Require OpenAI API secret
+      - name: Require Gemini API secret
         run: |
-          if [ -z "$OPENAI_API_KEY" ]; then
-            echo "Missing GitHub Actions secret: OPENAI_API_KEY"
-            echo "Add it under Settings > Secrets and variables > Actions, then rerun this workflow."
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "Missing GitHub Actions secret: GEMINI_API_KEY"
+            echo "Create a Gemini API key in Google AI Studio, add it under Settings > Secrets and variables > Actions, then rerun this workflow."
             exit 1
           fi
 
@@ -66,7 +68,7 @@ jobs:
 
       - name: Run RAGAS on 20 verified questions
         run: |
-          python scripts/evaluate_ragas.py             --golden data/eval/golden_questions.json             --out data/eval/ragas_report.csv             --evaluator-model "$OPENAI_MODEL"
+          python scripts/evaluate_ragas.py             --golden data/eval/golden_questions.json             --out data/eval/ragas_report.csv             --evaluator-model "$GEMINI_MODEL"
 
       - name: Show RAGAS summary
         run: |

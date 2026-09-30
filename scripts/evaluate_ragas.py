@@ -16,6 +16,9 @@ from src.config import (
     GEMINI_BASE_URL,
     GEMINI_EMBEDDING_MODEL,
     GEMINI_MODEL,
+    GROQ_API_KEY,
+    GROQ_BASE_URL,
+    GROQ_MODEL,
     LLM_PROVIDER,
     OPENAI_API_KEY,
     OPENAI_MODEL,
@@ -73,7 +76,15 @@ async def score_item(item: dict, result: dict, scorers: dict) -> dict:
 
 
 async def run(golden_path: Path, out_csv: Path, evaluator_model: str) -> None:
-    if LLM_PROVIDER == "gemini":
+    if LLM_PROVIDER == "groq":
+        if not GROQ_API_KEY:
+            raise SystemExit("GROQ_API_KEY is not set")
+        api_key = GROQ_API_KEY
+        base_url = GROQ_BASE_URL
+        # RAGAS answer relevancy uses the same local E5 family as the retriever.
+        # This avoids a paid embedding API and the HF model is public.
+        embedding_model = "intfloat/multilingual-e5-small"
+    elif LLM_PROVIDER == "gemini":
         if not GEMINI_API_KEY:
             raise SystemExit("GEMINI_API_KEY is not set")
         api_key = GEMINI_API_KEY
@@ -87,7 +98,8 @@ async def run(golden_path: Path, out_csv: Path, evaluator_model: str) -> None:
         embedding_model = "text-embedding-3-small"
     else:
         raise SystemExit(
-            f"Unsupported LLM_PROVIDER={LLM_PROVIDER!r}; use 'openai' or 'gemini'."
+            f"Unsupported LLM_PROVIDER={LLM_PROVIDER!r}; "
+            "use 'openai', 'gemini', or 'groq'."
         )
 
     import ragas
@@ -116,11 +128,18 @@ async def run(golden_path: Path, out_csv: Path, evaluator_model: str) -> None:
         client=client,
     )
 
-    evaluator_embeddings = embedding_factory(
-        "openai",
-        model=embedding_model,
-        client=client,
-    )
+    if LLM_PROVIDER == "groq":
+        evaluator_embeddings = embedding_factory(
+            "huggingface",
+            model=embedding_model,
+            interface="modern",
+        )
+    else:
+        evaluator_embeddings = embedding_factory(
+            "openai",
+            model=embedding_model,
+            client=client,
+        )
 
     scorers = {
         "faithfulness": Faithfulness(llm=evaluator_llm),
@@ -187,7 +206,12 @@ def main() -> None:
         type=Path,
         default=Path("data/eval/ragas_report.csv"),
     )
-    default_model = GEMINI_MODEL if LLM_PROVIDER == "gemini" else OPENAI_MODEL
+    if LLM_PROVIDER == "groq":
+        default_model = GROQ_MODEL
+    elif LLM_PROVIDER == "gemini":
+        default_model = GEMINI_MODEL
+    else:
+        default_model = OPENAI_MODEL
     parser.add_argument("--evaluator-model", default=default_model)
     args = parser.parse_args()
     asyncio.run(run(args.golden, args.out, args.evaluator_model))

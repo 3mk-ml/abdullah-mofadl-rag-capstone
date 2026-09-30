@@ -1,1 +1,1 @@
-Trigger RAGAS with GROQ_API_KEY configured. Provider: Groq; local RAGAS embeddings: multilingual-e5-small.
+Retry Groq RAGAS with evaluator max_tokens=512 and capped RAG answers for free-tier OTPM limits.

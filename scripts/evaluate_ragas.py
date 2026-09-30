@@ -11,7 +11,15 @@ import json
 import pandas as pd
 from openai import AsyncOpenAI
 
-from src.config import OPENAI_API_KEY, OPENAI_MODEL
+from src.config import (
+    GEMINI_API_KEY,
+    GEMINI_BASE_URL,
+    GEMINI_EMBEDDING_MODEL,
+    GEMINI_MODEL,
+    LLM_PROVIDER,
+    OPENAI_API_KEY,
+    OPENAI_MODEL,
+)
 from src.rag_pipeline import ask
 
 
@@ -65,12 +73,28 @@ async def score_item(item: dict, result: dict, scorers: dict) -> dict:
 
 
 async def run(golden_path: Path, out_csv: Path, evaluator_model: str) -> None:
-    if not OPENAI_API_KEY:
-        raise SystemExit("OPENAI_API_KEY is not set")
+    if LLM_PROVIDER == "gemini":
+        if not GEMINI_API_KEY:
+            raise SystemExit("GEMINI_API_KEY is not set")
+        api_key = GEMINI_API_KEY
+        base_url = GEMINI_BASE_URL
+        embedding_model = GEMINI_EMBEDDING_MODEL
+    elif LLM_PROVIDER == "openai":
+        if not OPENAI_API_KEY:
+            raise SystemExit("OPENAI_API_KEY is not set")
+        api_key = OPENAI_API_KEY
+        base_url = None
+        embedding_model = "text-embedding-3-small"
+    else:
+        raise SystemExit(
+            f"Unsupported LLM_PROVIDER={LLM_PROVIDER!r}; use 'openai' or 'gemini'."
+        )
 
     import ragas
     print(f"RAGAS version: {getattr(ragas, '__version__', 'unknown')}")
+    print(f"LLM provider: {LLM_PROVIDER}")
     print(f"Evaluator model: {evaluator_model}")
+    print(f"Evaluator embedding model: {embedding_model}")
 
     raw = json.loads(golden_path.read_text(encoding="utf-8"))
     items = raw["questions"] if isinstance(raw, dict) else raw
@@ -78,14 +102,23 @@ async def run(golden_path: Path, out_csv: Path, evaluator_model: str) -> None:
     if len(items) < 20:
         raise SystemExit("Need 20 manually verified questions with ground_truth for RAGAS.")
 
-    client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-    evaluator_llm = llm_factory(evaluator_model, client=client)
+    client_kwargs = {"api_key": api_key, "max_retries": 10}
+    if base_url:
+        client_kwargs["base_url"] = base_url
+    client = AsyncOpenAI(**client_kwargs)
 
-    # Answer relevancy needs embeddings. Use the OpenAI small embedding model;
-    # this is a tiny fraction of the total evaluation cost and matches RAGAS docs.
+    # Gemini's OpenAI-compatible endpoint supports chat completions,
+    # structured outputs, and embeddings. RAGAS can therefore use the same
+    # OpenAI client adapter while requests are actually served by Gemini.
+    evaluator_llm = llm_factory(
+        evaluator_model,
+        provider="openai",
+        client=client,
+    )
+
     evaluator_embeddings = embedding_factory(
         "openai",
-        model="text-embedding-3-small",
+        model=embedding_model,
         client=client,
     )
 
@@ -154,7 +187,8 @@ def main() -> None:
         type=Path,
         default=Path("data/eval/ragas_report.csv"),
     )
-    parser.add_argument("--evaluator-model", default=OPENAI_MODEL)
+    default_model = GEMINI_MODEL if LLM_PROVIDER == "gemini" else OPENAI_MODEL
+    parser.add_argument("--evaluator-model", default=default_model)
     args = parser.parse_args()
     asyncio.run(run(args.golden, args.out, args.evaluator_model))
 

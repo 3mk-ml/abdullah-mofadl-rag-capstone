@@ -1,1 +1,1 @@
-Resume RAGAS after Groq TPD retry window; restore checkpoint from run #11 and continue from Q13.
+Resume from Q13 with automatic Groq 429 wait/retry handling and preserved checkpoint.

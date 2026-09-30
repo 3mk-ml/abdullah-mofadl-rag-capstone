@@ -6,6 +6,9 @@ from .config import (
     GEMINI_API_KEY,
     GEMINI_BASE_URL,
     GEMINI_MODEL,
+    GROQ_API_KEY,
+    GROQ_BASE_URL,
+    GROQ_MODEL,
     LLM_PROVIDER,
     OPENAI_API_KEY,
     OPENAI_MODEL,
@@ -29,6 +32,23 @@ def _source_prompt(question: str, contexts: list[dict]) -> str:
 def answer(question: str, contexts: list[dict]) -> str:
     prompt = _source_prompt(question, contexts)
 
+    if LLM_PROVIDER == "groq":
+        if not GROQ_API_KEY:
+            raise RuntimeError("GROQ_API_KEY is not set")
+        client = OpenAI(
+            api_key=GROQ_API_KEY,
+            base_url=GROQ_BASE_URL,
+            max_retries=10,
+        )
+        resp = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[
+                {"role": "system", "content": SYSTEM},
+                {"role": "user", "content": prompt},
+            ],
+        )
+        return (resp.choices[0].message.content or "").strip()
+
     if LLM_PROVIDER == "gemini":
         if not GEMINI_API_KEY:
             raise RuntimeError("GEMINI_API_KEY is not set")
@@ -51,7 +71,7 @@ def answer(question: str, contexts: list[dict]) -> str:
 
     if LLM_PROVIDER != "openai":
         raise RuntimeError(
-            f"Unsupported LLM_PROVIDER={LLM_PROVIDER!r}; use 'openai' or 'gemini'."
+            f"Unsupported LLM_PROVIDER={LLM_PROVIDER!r}; use 'openai', 'gemini', or 'groq'."
         )
 
     if not OPENAI_API_KEY:

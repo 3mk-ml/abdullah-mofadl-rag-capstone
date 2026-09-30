@@ -1,1 +1,1 @@
-Retry RAGAS with Gemini API key configured. HF token is optional; public Hugging Face models may download anonymously.
+Trigger RAGAS with GROQ_API_KEY configured. Provider: Groq; local RAGAS embeddings: multilingual-e5-small.

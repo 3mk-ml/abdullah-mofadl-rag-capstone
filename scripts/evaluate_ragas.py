@@ -117,7 +117,11 @@ async def run(
         api_key = GROQ_API_KEY
         base_url = GROQ_BASE_URL
         embedding_model = "intfloat/multilingual-e5-small"
-        ragas_provider = "groq"
+        # RAGAS 0.4.3's native "groq" Instructor adapter is currently
+        # incompatible with the installed Instructor enum (GENAI error).
+        # Groq exposes an OpenAI-compatible endpoint, so use the stable
+        # OpenAI adapter while keeping the Groq base URL/client.
+        ragas_provider = "openai"
     elif LLM_PROVIDER == "gemini":
         if not GEMINI_API_KEY:
             raise SystemExit("GEMINI_API_KEY is not set")

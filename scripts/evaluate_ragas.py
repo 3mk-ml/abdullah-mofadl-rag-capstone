@@ -119,9 +119,8 @@ async def run(golden_path: Path, out_csv: Path, evaluator_model: str) -> None:
         client_kwargs["base_url"] = base_url
     client = AsyncOpenAI(**client_kwargs)
 
-    # Gemini's OpenAI-compatible endpoint supports chat completions,
-    # structured outputs, and embeddings. RAGAS can therefore use the same
-    # OpenAI client adapter while requests are actually served by Gemini.
+    # RAGAS uses an OpenAI-compatible client adapter. For Groq and Gemini,
+    # the client points at the provider's OpenAI-compatible base URL.
     evaluator_llm = llm_factory(
         evaluator_model,
         provider="openai",

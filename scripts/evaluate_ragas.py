@@ -73,11 +73,18 @@ async def score_item(item: dict, result: dict, scorers: dict) -> dict:
     }
 
 
-def save_checkpoint(path: Path, provider: str, model: str, rows: list[dict]) -> None:
+def save_checkpoint(
+    path: Path,
+    provider: str,
+    evaluator_model: str,
+    generator_model: str,
+    rows: list[dict],
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "llm_provider": provider,
-        "evaluator_model": model,
+        "evaluator_model": evaluator_model,
+        "generator_model": generator_model,
         "completed": len(rows),
         "rows": rows,
     }
@@ -87,7 +94,12 @@ def save_checkpoint(path: Path, provider: str, model: str, rows: list[dict]) -> 
     )
 
 
-def load_checkpoint(path: Path, provider: str, model: str) -> list[dict]:
+def load_checkpoint(
+    path: Path,
+    provider: str,
+    evaluator_model: str,
+    generator_model: str,
+) -> list[dict]:
     if not path.exists():
         return []
     try:
@@ -96,7 +108,8 @@ def load_checkpoint(path: Path, provider: str, model: str) -> list[dict]:
         return []
     if (
         payload.get("llm_provider") != provider
-        or payload.get("evaluator_model") != model
+        or payload.get("evaluator_model") != evaluator_model
+        or payload.get("generator_model") != generator_model
     ):
         print("Ignoring checkpoint from a different provider/model.", flush=True)
         return []
@@ -165,11 +178,17 @@ async def run(
         flush=True,
     )
 
+    evaluator_kwargs = {
+        "provider": ragas_provider,
+        "client": client,
+        "max_tokens": evaluator_max_tokens,
+    }
+    if LLM_PROVIDER == "groq" and evaluator_model.startswith("openai/gpt-oss-"):
+        evaluator_kwargs["reasoning_effort"] = "low"
+
     evaluator_llm = llm_factory(
         evaluator_model,
-        provider=ragas_provider,
-        client=client,
-        max_tokens=evaluator_max_tokens,
+        **evaluator_kwargs,
     )
 
     if LLM_PROVIDER == "groq":
@@ -198,7 +217,8 @@ async def run(
     rows = load_checkpoint(
         checkpoint_path,
         provider=LLM_PROVIDER,
-        model=evaluator_model,
+        evaluator_model=evaluator_model,
+        generator_model=GROQ_MODEL if LLM_PROVIDER == "groq" else evaluator_model,
     )
     done_ids = {r.get("id") for r in rows}
 
@@ -217,7 +237,8 @@ async def run(
         save_checkpoint(
             checkpoint_path,
             provider=LLM_PROVIDER,
-            model=evaluator_model,
+            evaluator_model=evaluator_model,
+            generator_model=GROQ_MODEL if LLM_PROVIDER == "groq" else evaluator_model,
             rows=rows,
         )
 
@@ -251,6 +272,7 @@ async def run(
         **{k: float(v) for k, v in df[metric_cols].mean().to_dict().items()},
         "mean_latency_seconds": float(df["latency_seconds"].mean()),
         "evaluator_model": evaluator_model,
+        "generator_model": GROQ_MODEL if LLM_PROVIDER == "groq" else evaluator_model,
         "evaluator_max_tokens": evaluator_max_tokens,
         "llm_provider": LLM_PROVIDER,
     }

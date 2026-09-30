@@ -130,6 +130,7 @@ async def run(golden_path: Path, out_csv: Path, evaluator_model: str) -> None:
         provider="openai",
         client=client,
         max_tokens=evaluator_max_tokens,
+        reasoning_effort="low" if LLM_PROVIDER == "groq" else None,
     )
 
     if LLM_PROVIDER == "groq":

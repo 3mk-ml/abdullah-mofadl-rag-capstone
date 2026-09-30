@@ -1,1 +1,1 @@
-Fast RAGAS retry: reuse verified run-8 index artifact, cache HF models, GPT-OSS 20B, max_tokens=256.
+Retry optimized RAGAS with max_tokens=900 after Q01 structured faithfulness output was truncated at 256.

@@ -51,7 +51,15 @@ jobs:
           from ragas.metrics.collections.answer_relevancy import AnswerRelevancy
           from ragas.metrics.collections.context_precision import ContextPrecision
           from ragas.metrics.collections.context_recall import ContextRecall
-          print("RAGAS import smoke test passed")
+          from ragas.embeddings.base import embedding_factory
+          emb = embedding_factory(
+              "huggingface",
+              model="intfloat/multilingual-e5-small",
+              interface="modern",
+          )
+          vector = emb.embed_text("local E5 embedding smoke test")
+          assert vector and len(vector) > 0
+          print("RAGAS imports + local E5 embedding smoke test passed")
           print("ragas:", getattr(ragas, "__version__", "unknown"))
           PY
 

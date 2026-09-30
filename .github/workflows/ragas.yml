@@ -25,7 +25,10 @@ jobs:
       HF_HOME: ~/.cache/huggingface
       LLM_PROVIDER: groq
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-      GROQ_MODEL: llama-3.1-8b-instant
+      # Split free-tier usage across two active models:
+      # Qwen generates RAG answers; GPT-OSS 120B is the single consistent RAGAS judge.
+      GROQ_MODEL: qwen/qwen3.8-27b
+      RAGAS_EVALUATOR_MODEL: openai/gpt-oss-120b
       RAGAS_MAX_TOKENS: "700"
 
     steps:
@@ -98,11 +101,34 @@ jobs:
               raise SystemExit("Verified retrieval artifact is below the required threshold")
           PY
 
+      - name: Restore previous compatible RAGAS checkpoint
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          mkdir -p /tmp/ragas-previous
+          ARTIFACT_ID=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=agrirag-ragas-report&per_page=100" \
+            --jq '.artifacts | map(select(.expired == false)) | sort_by(.created_at) | reverse | .[0].id // empty')
+          if [ -n "$ARTIFACT_ID" ]; then
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" > /tmp/ragas-previous.zip
+            unzip -q -o /tmp/ragas-previous.zip -d /tmp/ragas-previous
+            CHECKPOINT=$(find /tmp/ragas-previous -name ragas_checkpoint.json -type f | head -n 1)
+            if [ -n "$CHECKPOINT" ]; then
+              cp "$CHECKPOINT" data/eval/ragas_checkpoint.json
+              echo "Restored prior checkpoint; the evaluator will validate model compatibility."
+            else
+              echo "No prior checkpoint file found; starting fresh."
+            fi
+          else
+            echo "No prior RAGAS artifact found; starting fresh."
+          fi
+          set -e
+
       - name: Run RAGAS on 20 verified questions
         env:
           PYTHONUNBUFFERED: "1"
         run: |
-          python scripts/evaluate_ragas.py             --golden data/eval/golden_questions.json             --out data/eval/ragas_report.csv             --checkpoint data/eval/ragas_checkpoint.json             --evaluator-model "$GROQ_MODEL"
+          python scripts/evaluate_ragas.py             --golden data/eval/golden_questions.json             --out data/eval/ragas_report.csv             --checkpoint data/eval/ragas_checkpoint.json             --evaluator-model "$RAGAS_EVALUATOR_MODEL"
 
       - name: Show RAGAS summary
         run: cat data/eval/ragas_summary.json

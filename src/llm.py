@@ -42,6 +42,7 @@ def answer(question: str, contexts: list[dict]) -> str:
         )
         resp = client.chat.completions.create(
             model=GROQ_MODEL,
+            max_tokens=320,
             messages=[
                 {"role": "system", "content": SYSTEM},
                 {"role": "user", "content": prompt},

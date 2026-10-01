@@ -1,1 +1,1 @@
-Retry Cohere RAGAS with 4096 structured-output token budget and RAGAS/Instructor structured-output smoke test.
+Retry Cohere RAGAS using Instructor JSON_SCHEMA, real Faithfulness smoke test, and fresh checkpoint signature.

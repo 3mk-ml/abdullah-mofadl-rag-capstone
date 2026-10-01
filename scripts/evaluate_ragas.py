@@ -73,13 +73,16 @@ def _cohere_schema(model_cls):
 class CohereNativeRagasLLM(InstructorLLM):
     """InstructorLLM-compatible adapter backed by Cohere Chat V2 JSON Schema.
 
-    RAGAS 0.4.3 collection metrics enforce isinstance(llm, InstructorLLM).
-    We subclass InstructorLLM so the metrics accept the adapter, while
-    overriding generation to call Cohere's native structured-output API.
+    The Cohere Trial key is limited to 20 calls/minute. RAGAS can make many
+    LLM calls per question (especially Context Precision), so this adapter
+    serializes calls and keeps a conservative minimum interval between them.
     """
 
     def __init__(self, api_key: str, model: str, max_tokens: int):
-        self.client = cohere.AsyncClientV2(api_key=api_key)
+        self.client = cohere.AsyncClientV2(
+            api_key=api_key,
+            log_warning_experimental_features=False,
+        )
         self.model = model
         self.provider = "cohere"
         self.max_tokens = max_tokens
@@ -90,10 +93,42 @@ class CohereNativeRagasLLM(InstructorLLM):
         self.system_prompt = None
         self.cache = None
         self.is_async = True
+        self._rate_lock = asyncio.Lock()
+        self._last_call_started = 0.0
+        self._min_interval = float(
+            os.getenv("COHERE_MIN_CALL_INTERVAL_SECONDS", "4.0")
+        )
+
+    async def _wait_for_rate_slot(self) -> None:
+        async with self._rate_lock:
+            loop = asyncio.get_running_loop()
+            elapsed = loop.time() - self._last_call_started
+            delay = self._min_interval - elapsed
+            if delay > 0:
+                await asyncio.sleep(delay)
+            self._last_call_started = loop.time()
+
+    async def _chat_with_retry(self, **kwargs):
+        for attempt in range(1, 9):
+            await self._wait_for_rate_slot()
+            try:
+                return await self.client.chat(**kwargs)
+            except Exception as exc:
+                if getattr(exc, "status_code", None) != 429:
+                    raise
+                if attempt >= 8:
+                    raise
+                print(
+                    "Cohere Trial 20-RPM limit reached; waiting 65s "
+                    f"before retry ({attempt}/8).",
+                    flush=True,
+                )
+                await asyncio.sleep(65.0)
+        raise RuntimeError("Cohere retry loop exited unexpectedly")
 
     async def agenerate(self, prompt: str, response_model):
         schema = _cohere_schema(response_model)
-        response = await self.client.chat(
+        response = await self._chat_with_retry(
             model=self.model,
             messages=[
                 {
@@ -172,11 +207,19 @@ async def _ask_with_quota_wait(question: str, top_n: int = 5) -> dict:
     while True:
         try:
             return await asyncio.to_thread(ask, question, top_n=top_n)
-        except RateLimitError as exc:
+        except Exception as exc:
+            is_openai_rate_limit = isinstance(exc, RateLimitError)
+            is_http_429 = getattr(exc, "status_code", None) == 429
+            if not (is_openai_rate_limit or is_http_429):
+                raise
             waits += 1
             if waits > 8:
                 raise
-            delay = _retry_delay_seconds(exc) + 5.0
+            delay = (
+                _retry_delay_seconds(exc) + 5.0
+                if is_openai_rate_limit
+                else 65.0
+            )
             print(
                 f"Provider quota reached during answer generation; "
                 f"waiting {delay:.1f}s then retrying automatically "
@@ -420,7 +463,18 @@ async def run(
             continue
 
         print(f"[{i:02d}/20] Generating answer: {item['id']}", flush=True)
+        if LLM_PROVIDER == "cohere":
+            # Keep the answer-generation call separated from the evaluator's
+            # previous request so the shared Trial key remains below 20 RPM.
+            await asyncio.sleep(
+                float(os.getenv("COHERE_MIN_CALL_INTERVAL_SECONDS", "4.0"))
+            )
         rag_result = await _ask_with_quota_wait(item["question"], top_n=5)
+        if LLM_PROVIDER == "cohere":
+            # The generator and evaluator use the same Trial key.
+            await asyncio.sleep(
+                float(os.getenv("COHERE_MIN_CALL_INTERVAL_SECONDS", "4.0"))
+            )
         row = await score_item(item, rag_result, scorers)
         rows.append(row)
         done_ids.add(item.get("id"))

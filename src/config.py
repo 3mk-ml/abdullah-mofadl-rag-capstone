@@ -36,6 +36,13 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")
 GROQ_BASE_URL = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
 
+COHERE_API_KEY = os.getenv("COHERE_API_KEY", "")
+COHERE_MODEL = os.getenv("COHERE_MODEL", "command-a-plus-05-2026")
+COHERE_BASE_URL = os.getenv(
+    "COHERE_BASE_URL",
+    "https://api.cohere.ai/compatibility/v1",
+)
+
 APP_PASSWORD = os.getenv("APP_PASSWORD", "")
 
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "350"))

@@ -251,7 +251,7 @@ async def run(
         client_kwargs["base_url"] = base_url
     client = AsyncOpenAI(**client_kwargs)
 
-    evaluator_max_tokens = int(os.getenv("RAGAS_MAX_TOKENS", "900"))
+    evaluator_max_tokens = int(os.getenv("RAGAS_MAX_TOKENS", "4096"))
     print(
         f"RAGAS evaluator max tokens/request: {evaluator_max_tokens}",
         flush=True,

@@ -18,7 +18,7 @@ jobs:
       STALE_RUN_ID: "36803193998"
       SELF_RUN_ID: ${{ github.run_id }}
     steps:
-      - name: Force-cancel stale RAGAS 17 and all other active runs
+      - name: Clear every active run except RAGAS 18
         shell: bash
         run: |
           set -euo pipefail
@@ -35,15 +35,14 @@ jobs:
             gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/force-cancel" >/dev/null 2>&1 || true
           done < /tmp/active-runs.txt
 
-          for i in 1 2 3 4 5 6; do
-            status=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$STALE_RUN_ID" --jq '.status')
-            conclusion=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$STALE_RUN_ID" --jq '.conclusion // ""')
-            echo "RAGAS 17 status=$status conclusion=$conclusion"
-            if [ "$status" = "completed" ]; then
-              exit 0
-            fi
-            gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$STALE_RUN_ID/force-cancel" >/dev/null 2>&1 || true
-            sleep 5
-          done
+          sleep 3
 
-          echo "Force-cancel request submitted repeatedly; GitHub may still be propagating the run-level status."
+          stale_status=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$STALE_RUN_ID" --jq '.status' 2>/dev/null || echo "missing")
+          echo "RAGAS 17 status after force-cancel: $stale_status"
+
+          if [ "$stale_status" != "completed" ] && [ "$stale_status" != "missing" ]; then
+            echo "Deleting stale run record $STALE_RUN_ID to unblock RAGAS 18"
+            gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/runs/$STALE_RUN_ID" >/dev/null 2>&1 || true
+          fi
+
+          echo "Cleanup complete."

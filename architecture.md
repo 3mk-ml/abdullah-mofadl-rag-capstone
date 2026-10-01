@@ -2,105 +2,122 @@
 
 ## 1. System overview
 
-### Offline ingestion loop
-`PDF/TXT/MD -> text extraction -> recursive chunking -> multilingual embeddings -> Chroma vector index + BM25 lexical index`
+### Offline ingestion
+`PDF/TXT/MD -> PyMuPDF extraction -> recursive structure-aware chunking -> multilingual E5 embeddings -> Chroma + BM25`
 
-### Online query loop
-`Question -> multilingual query embedding -> vector top-k + BM25 top-k -> Reciprocal Rank Fusion -> multilingual cross-encoder reranker -> top 5 evidence chunks -> LLM answer with citations`
+### Online query
+`Question -> E5 query embedding -> vector top-20 + BM25 top-20 -> RRF -> multilingual cross-encoder reranker -> top-5 evidence chunks -> Cohere Command R7B -> grounded answer + citations`
 
-## 2. Chunking decision
-**Choice:** recursive structure-aware chunking, initial target about 350 tokens with about 60-token overlap, then tune against Recall@5.
+## 2. Final corpus and index
+- Curated manifest: 24 official/authoritative candidates
+- Successfully collected final corpus: **20 documents**
+- Extracted pages/units: **1,828**
+- Final chunks: **5,540**
+- Primary source families: FAO/FAO-partners, ICARDA/CGIAR, and World Bank
 
-**Why it fits this corpus:** FAO/ICARDA manuals contain long technical paragraphs, numbered sections, equations, and page-level concepts. Fixed-size splitting can cut an irrigation rule away from its explanation. Recursive splitting tries paragraph and sentence boundaries first while keeping a controlled maximum size.
+The final 20-document corpus satisfies the course requirement of 20–50 high-quality documents.
 
-**Why not semantic chunking initially:** semantic chunking would add embedding calls and tuning complexity before we know it is necessary. The capstone has a short deadline and requires measured improvement. We begin with a strong deterministic baseline, then change it only if the 30-question retrieval evaluation shows a need.
+## 3. Chunking decision
+**Choice:** recursive structure-aware chunking, target about **350 tokens** with about **60-token overlap**.
 
-**Why overlap:** modest overlap protects context that crosses paragraph/chunk boundaries without excessively duplicating the corpus.
+FAO and related technical manuals contain long paragraphs, numbered sections, equations, and page-level concepts. Recursive splitting preserves paragraph/sentence boundaries better than blind fixed windows. Overlap protects concepts crossing boundaries without duplicating excessive text.
 
-## 3. Embedding model decision
-**Choice:** `intfloat/multilingual-e5-small` (384 dimensions).
+Semantic chunking was not adopted because the deterministic recursive baseline already cleared the required retrieval threshold, so additional complexity was not justified by the measured result.
 
-**Why:**
-- Multilingual retrieval supports Arabic user questions over mostly English technical manuals.
-- Small enough for CPU deployment and local development.
-- No per-document embedding API bill, important because the course API balance is limited.
-- 384-dimensional vectors keep the local Chroma index compact.
+## 4. Embedding model
+**Choice:** `intfloat/multilingual-e5-small` (384 dimensions), run locally.
 
-**Alternative rejected for the baseline:** paid embedding APIs can be excellent, but would consume the course balance during repeated indexing experiments. If Recall@5 remains below target after chunk/retrieval tuning, an API embedding model can be tested as an ablation.
+Reasons:
+- Arabic questions can retrieve mostly English source passages.
+- Small enough for CPU inference.
+- No embedding API charge during ingestion or querying.
+- E5 query/passage prefixes are used as intended.
 
-## 4. Vector database decision
+## 5. Vector store
 **Choice:** persistent Chroma.
 
-**Why it fits this project:**
-- Corpus is only 20–50 documents, not millions of vectors.
-- Zero infrastructure cost.
-- Persists locally and can ship with the deployment artifact.
-- Fast enough for a portfolio-scale capstone.
+At 5,540 chunks, a managed vector service would add infrastructure without solving a real scale problem. Chroma persists locally and is sufficient for the capstone workload.
 
-**Why not Pinecone/Qdrant cloud:** those are strong production choices, but add deployment credentials, network failure modes, and monthly cost without solving a scale problem this corpus actually has.
+## 6. Hybrid retrieval
+- Vector candidates: top 20
+- BM25 candidates: top 20
+- Fusion: Reciprocal Rank Fusion, `RRF_K=60`
+- Final reranked evidence: top 5
 
-**Why not pgvector:** excellent when PostgreSQL is already part of the product. AgriRAG has no relational workload that justifies introducing a database server solely for vectors.
+Vector search covers semantic paraphrase; BM25 covers exact technical terms, crop names, acronyms, and units. RRF avoids comparing incompatible raw BM25 and cosine-score scales.
 
-## 5. Hybrid retrieval decision
-**Vector search:** captures semantic similarity and paraphrases.
+## 7. Reranker
+**Choice:** `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`, local CPU inference.
 
-**BM25:** captures exact agronomic terms, crop names, model names, codes, units, and rare phrases that dense retrieval can miss.
+The reranker jointly scores question + passage and improves final evidence precision after broad hybrid candidate retrieval. Keeping it local removes per-query rerank API cost.
 
-**Fusion:** Reciprocal Rank Fusion (RRF) combines the rank positions rather than raw scores, avoiding difficult score normalization between BM25 and cosine similarity.
+## 8. Generator
+**Final choice:** Cohere `command-r7b-12-2024`.
 
-**Candidate depth:** start with vector top-20 + BM25 top-20; fuse; rerank; return top-5.
+The model is used through Cohere Chat V2 for the final app and was also used consistently in the successful RAGAS evaluation. The application prompt:
+- answers only from supplied evidence;
+- reports insufficient evidence rather than inventing thresholds/doses;
+- preserves units;
+- cites retrieved passages using `[n]`;
+- answers in Arabic when the question is Arabic and English otherwise.
 
-## 6. Reranker decision
-**Choice:** `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`.
+The provider remains environment-controlled so another provider can be substituted without changing retrieval.
 
-**Why:**
-- Cross-encoder reranking scores the query and passage jointly, improving precision after broad first-stage retrieval.
-- The model supports Arabic and English, matching the bilingual query requirement.
-- It is smaller than very large multilingual rerankers, making CPU deployment more practical.
-- No per-query reranking API cost.
-
-## 7. Generator decision
-**Choice:** OpenAI Responses API with model name controlled by `OPENAI_MODEL`; baseline default is `gpt-5.6-luna` for a cost-sensitive portfolio workload.
-
-The prompt explicitly requires answers only from retrieved evidence, says to report insufficient evidence, and requires [n] source citations. The model is deliberately configurable so the student can use the model allowed by the course key without changing application code.
-
-## 8. Arabic handling
-- Arabic/English multilingual embeddings and reranking
+## 9. Arabic handling
+- Multilingual E5 retrieval
+- Multilingual cross-encoder reranking
 - Conservative Unicode/whitespace normalization
-- Arabic normalization only in BM25 tokenization (not destructive rewriting of source passages)
-- Streamlit RTL mode and Amiri font
+- Arabic-specific normalization in BM25 tokenization
+- Streamlit RTL mode
+- Amiri font for Arabic UI
 
-## 9. Evaluation
+## 10. Evaluation
+
 ### Retrieval
-30 golden questions. Each question includes a manually verified gold passage/source. Metric: Recall@5 = fraction of questions for which the gold evidence appears in the top five final retrieved chunks.
+30 manually verified golden questions using strict gold chunk IDs.
 
-Target: **>= 80%**.
+**Final Recall@5: 90.00% (27/30).**  
+Misses retained as measured: **Q03, Q12, Q24**.
 
-### End-to-end
-20 golden questions with ground-truth answers. RAGAS report includes at minimum faithfulness, answer relevancy, context precision, and context recall.
+### End-to-end RAGAS
+Successful GitHub Actions run: **#21**  
+Questions: **20**
 
-### Tuning order
-1. Inspect misses manually.
-2. Tune chunk size/overlap.
-3. Tune vector_k/BM25_k.
-4. Verify BM25 tokenization for Arabic and technical terms.
-5. Compare with/without reranker.
-6. Only then test a different embedding model.
+| Metric | Final mean |
+|---|---:|
+| Faithfulness | **0.8329** |
+| Answer relevancy | **0.9819** |
+| Context precision | **0.9840** |
+| Context recall | **1.0000** |
+| Mean latency | **8.16 s** |
+| Median latency | **7.31 s** |
 
-This order minimizes API spend and preserves a defensible experimental trail.
+The RAGAS report is committed at `data/eval/ragas_report.csv`; the machine-readable mean summary is at `data/eval/ragas_summary.json`.
 
-## 10. Interface and authentication
-Streamlit is used because one framework satisfies the assignment and keeps deployment simple. Authentication is a course-appropriate shared password stored in deployment secrets, not in Git.
+## 11. Interface and authentication
+Streamlit provides the capstone UI. A shared password is loaded only from `APP_PASSWORD`; secrets are not committed. The app displays retrieved source snippets and page metadata so users can inspect evidence.
 
-## 11. Deployment
-Primary target: **Hugging Face Spaces** with Streamlit. The index is built before deployment and committed via Git LFS if necessary. Secrets hold `OPENAI_API_KEY`, `OPENAI_MODEL`, and `APP_PASSWORD`.
+## 12. Deployment
+The app is containerized. Railway is the primary deployment target; the same Docker image remains compatible with a Docker-based Hugging Face Space.
 
-## 12. Failure modes and mitigations
+Deployment requirements:
+- `LLM_PROVIDER=cohere`
+- `COHERE_API_KEY`
+- `COHERE_MODEL=command-r7b-12-2024`
+- `APP_PASSWORD`
+- enough RAM for the local embedding and reranker models
+
+The deployment build prepares the corpus/index if they are not already present in the image.
+
+## 13. Failure modes
+
 | Failure | Detection | Mitigation |
 |---|---|---|
-| Scanned PDF extracts empty text | corpus check shows near-zero characters | replace with OCR/text version before indexing |
-| Exact crop/chemical term missed | BM25 result better than vector result | retain hybrid retrieval + inspect tokenizer |
-| Correct chunk retrieved but ranked low | gold appears in candidates but not top 5 | reranker/tune candidate depth |
-| Unsupported answer | citation does not support claim | stronger prompt, RAGAS faithfulness review, manual spot checks |
-| Slow Space cold start | first query much slower | prebuild index; cache embedding and reranker models |
-| API balance unexpectedly drops | token/cost log rises | keep local embedding/reranking; cap context; run RAGAS once after retrieval is stable |
+| Source download fails | fewer than 20 valid docs | fail corpus preparation; repair manifest/source |
+| PDF extracts little/no text | corpus validation | replace source or OCR before indexing |
+| Exact term missed | BM25 beats dense retrieval | retain hybrid retrieval |
+| Gold chunk ranked below top 5 | Recall@5 miss report | inspect chunking/candidate depth/reranker |
+| Unsupported answer | low faithfulness/manual audit | stricter evidence prompt + source review |
+| Trial API 429 | Cohere 429 response | paced requests / production key |
+| Cold start | first request latency | prebuild index/models where hosting permits |
+| Missing secret | startup/API failure | deployment secret validation |

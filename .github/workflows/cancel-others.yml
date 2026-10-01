@@ -1,4 +1,4 @@
-name: Cancel all runs except RAGAS 18
+name: Cancel all runs except RAGAS 19
 
 on:
   push:
@@ -14,11 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      KEEP_RUN_ID: "36803926630"
-      STALE_RUN_ID: "36803193998"
+      KEEP_RUN_ID: "36805001051"
       SELF_RUN_ID: ${{ github.run_id }}
     steps:
-      - name: Clear every active run except RAGAS 18
+      - name: Cancel every active workflow except RAGAS 19
         shell: bash
         run: |
           set -euo pipefail
@@ -32,17 +31,5 @@ jobs:
               continue
             fi
             echo "Force-cancelling $run_id"
-            gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/force-cancel" >/dev/null 2>&1 || true
+            gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/force-cancel" >/dev/null 2>&1 ||             gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/cancel" >/dev/null 2>&1 || true
           done < /tmp/active-runs.txt
-
-          sleep 3
-
-          stale_status=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$STALE_RUN_ID" --jq '.status' 2>/dev/null || echo "missing")
-          echo "RAGAS 17 status after force-cancel: $stale_status"
-
-          if [ "$stale_status" != "completed" ] && [ "$stale_status" != "missing" ]; then
-            echo "Deleting stale run record $STALE_RUN_ID to unblock RAGAS 18"
-            gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/runs/$STALE_RUN_ID" >/dev/null 2>&1 || true
-          fi
-
-          echo "Cleanup complete."

@@ -1,4 +1,4 @@
-name: Cancel all runs except RAGAS 19
+name: Cancel all runs except RAGAS 20
 
 on:
   push:
@@ -14,14 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-      KEEP_RUN_ID: "36805001051"
+      KEEP_RUN_ID: "36805342632"
       SELF_RUN_ID: ${{ github.run_id }}
     steps:
-      - name: Cancel every active workflow except RAGAS 19
+      - name: Cancel every active workflow except RAGAS 20
         shell: bash
         run: |
           set -euo pipefail
-
           gh api "repos/$GITHUB_REPOSITORY/actions/runs?per_page=100"             --jq '.workflow_runs[] | select(.status == "queued" or .status == "in_progress" or .status == "pending" or .status == "waiting" or .status == "requested") | .id'             > /tmp/active-runs.txt
 
           while read -r run_id; do

@@ -1,1 +1,1 @@
-Trigger Cohere RAGAS after COHERE_API_KEY repository secret was added.
+Retry Cohere RAGAS with 4096 structured-output token budget and RAGAS/Instructor structured-output smoke test.

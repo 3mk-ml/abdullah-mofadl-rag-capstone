@@ -62,8 +62,9 @@ See `architecture.md` for the technical rationale and `ADR.md` for the final one
 - Chroma
 - `rank-bm25`
 - Reciprocal Rank Fusion
-- `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`
-- Cohere `command-r7b-12-2024`
+- `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` for the validated local/CI reranker
+- Cohere `rerank-v3.5` for the 1 GB Railway live-demo reranker
+- Cohere `command-r7b-12-2024` for generation
 - RAGAS 0.4.3
 - Docker
 - Railway-ready deployment configuration
@@ -205,6 +206,7 @@ Features:
 - shared-password authentication
 - vector + BM25 + RRF hybrid retrieval
 - multilingual reranking
+- a fixed **top 5** evidence passages, matching the validated evaluation setting
 - visible evidence snippets and source/page metadata
 - answer latency display
 
@@ -242,7 +244,11 @@ COHERE_MODEL=command-r7b-12-2024
 APP_PASSWORD=<secret>
 ```
 
-The deployment process must have enough memory for the local E5 embedding model and multilingual cross-encoder reranker.
+The deployment process must have enough memory for its active retrieval models.
+
+### Railway memory profile
+
+The capstone's strict Recall@5 evaluation was produced with the local multilingual cross-encoder. Railway's current 1 GB service limit cannot keep both the local E5 embedder and the local cross-encoder resident simultaneously: observed memory reached about 0.986 GB and the process was killed while the second model loaded. The live Railway service therefore uses `RERANKER_PROVIDER=cohere` with `rerank-v3.5`, while keeping the same vector + BM25 + RRF candidate generation and fixed top-5 evidence output. Local/CI evaluation remains `RERANKER_PROVIDER=local` for exact reproduction of the published Recall@5 result.
 
 ## User testing
 

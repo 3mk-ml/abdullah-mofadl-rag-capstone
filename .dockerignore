@@ -1,0 +1,13 @@
+.git
+.github
+.venv
+__pycache__
+*.pyc
+.env
+.streamlit/secrets.toml
+.DS_Store
+.pytest_cache
+data/raw/*
+!data/raw/.gitkeep
+data/index/*
+!data/index/.gitkeep

@@ -58,36 +58,47 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Smoke-test Cohere structured output through RAGAS
+      - name: Compile evaluation code
+        run: python -m py_compile scripts/evaluate_ragas.py src/llm.py src/config.py
+
+      - name: Smoke-test Cohere native JSON Schema with real RAGAS metric
         run: |
           python - <<'PY'
           import asyncio
           import os
-          from pydantic import BaseModel
+          import instructor
           from openai import AsyncOpenAI
-          from ragas.llms.base import llm_factory
-
-          class SmokeOutput(BaseModel):
-              ok: bool
+          from ragas.llms.base import InstructorLLM
+          from ragas.metrics.collections.faithfulness import Faithfulness
 
           async def main():
-              client = AsyncOpenAI(
+              raw = AsyncOpenAI(
                   api_key=os.environ["COHERE_API_KEY"],
                   base_url=os.environ["COHERE_BASE_URL"],
                   max_retries=2,
               )
-              llm = llm_factory(
-                  os.environ["COHERE_MODEL"],
-                  provider="openai",
-                  client=client,
-                  max_tokens=512,
+              patched = instructor.from_openai(
+                  raw,
+                  mode=instructor.Mode.JSON_SCHEMA,
               )
-              result = await llm.agenerate(
-                  "Return a structured response with ok=true.",
-                  SmokeOutput,
+              llm = InstructorLLM(
+                  client=patched,
+                  model=os.environ["COHERE_MODEL"],
+                  provider="cohere",
+                  max_tokens=4096,
+                  temperature=0.01,
+                  top_p=0.1,
               )
-              assert result.ok is True
-              print("Cohere structured-output RAGAS smoke test passed")
+              metric = Faithfulness(llm=llm)
+              score = await metric.ascore(
+                  user_input="What is crop evapotranspiration?",
+                  response="Crop evapotranspiration is the crop water use represented by ETc.",
+                  retrieved_contexts=[
+                      "Crop evapotranspiration is denoted ETc and represents evapotranspiration from a crop."
+                  ],
+              )
+              assert 0.0 <= float(score.value) <= 1.0
+              print("Cohere JSON_SCHEMA + real RAGAS Faithfulness smoke test passed:", score.value)
 
           asyncio.run(main())
           PY

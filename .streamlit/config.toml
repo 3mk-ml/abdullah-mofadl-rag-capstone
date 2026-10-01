@@ -3,9 +3,16 @@ headless = true
 address = "0.0.0.0"
 port = 7860
 fileWatcherType = "none"
+enableCORS = true
+corsAllowedOrigins = ["https://agrirag-production.up.railway.app"]
+enableXsrfProtection = true
+enableWebsocketCompression = false
+websocketPingInterval = 20
 
 [browser]
 gatherUsageStats = false
+serverAddress = "agrirag-production.up.railway.app"
+serverPort = 443
 
 [theme]
 base = "light"

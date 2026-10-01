@@ -7,11 +7,6 @@ on:
     paths:
       - "data/eval/run_ragas.trigger"
 
-# A new retry automatically cancels the older slow RAGAS run.
-concurrency:
-  group: agrirag-ragas-evaluation
-  cancel-in-progress: true
-
 permissions:
   contents: read
   actions: read

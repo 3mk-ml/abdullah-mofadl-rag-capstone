@@ -5,10 +5,14 @@ on:
   push:
     paths:
       - "src/**"
-      - "scripts/**"
+      - "scripts/check_corpus.py"
+      - "scripts/cost_analysis.py"
+      - "scripts/download_corpus.py"
+      - "scripts/evaluate_recall.py"
+      - "scripts/ingest.py"
       - "tests/**"
       - "data/sources_manifest.csv"
-      - "data/eval/**"
+      - "data/eval/golden_questions.json"
       - "requirements.txt"
       - "app.py"
       - ".github/workflows/corpus.yml"

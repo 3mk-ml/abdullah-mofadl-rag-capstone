@@ -1,0 +1,15 @@
+{
+  "questions": 20,
+  "faithfulness": 0.832857142857143,
+  "answer_relevancy": 0.9819149953261694,
+  "context_precision": 0.9839583333124843,
+  "context_recall": 1.0,
+  "mean_latency_seconds": 8.158663983599995,
+  "evaluator_model": "command-r7b-12-2024",
+  "generator_model": "command-r7b-12-2024",
+  "structured_mode": "cohere_native_json_schema_v1",
+  "evaluator_max_tokens": 4000,
+  "llm_provider": "cohere",
+  "github_actions_run": 36805862750,
+  "github_actions_run_number": 21
+}

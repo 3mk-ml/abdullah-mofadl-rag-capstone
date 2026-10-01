@@ -1,1 +1,1 @@
-Resume from Q13 with automatic Groq 429 wait/retry handling and preserved checkpoint.
+Fresh final RAGAS run with Cohere Command A+ via OpenAI-compatible API; local E5 embeddings; reuse verified Recall@5=90% index.

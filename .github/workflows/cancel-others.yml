@@ -15,14 +15,13 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       KEEP_RUN_ID: "36803926630"
+      STALE_RUN_ID: "36803193998"
       SELF_RUN_ID: ${{ github.run_id }}
     steps:
-      - name: Force-cancel every active workflow except the target RAGAS run
+      - name: Force-cancel stale RAGAS 17 and all other active runs
         shell: bash
         run: |
           set -euo pipefail
-          echo "Keeping target run: $KEEP_RUN_ID"
-          echo "Keeping cleanup run until it finishes: $SELF_RUN_ID"
 
           gh api "repos/$GITHUB_REPOSITORY/actions/runs?per_page=100"             --jq '.workflow_runs[] | select(.status == "queued" or .status == "in_progress" or .status == "pending" or .status == "waiting" or .status == "requested") | .id'             > /tmp/active-runs.txt
 
@@ -32,12 +31,19 @@ jobs:
               echo "Keeping $run_id"
               continue
             fi
-
-            echo "Cancelling $run_id"
-            if ! gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/cancel" >/dev/null 2>&1; then
-              echo "Normal cancel did not apply; force-cancelling $run_id"
-              gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/force-cancel" >/dev/null 2>&1 || true
-            fi
+            echo "Force-cancelling $run_id"
+            gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/force-cancel" >/dev/null 2>&1 || true
           done < /tmp/active-runs.txt
 
-          echo "All cancellation requests sent."
+          for i in 1 2 3 4 5 6; do
+            status=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$STALE_RUN_ID" --jq '.status')
+            conclusion=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$STALE_RUN_ID" --jq '.conclusion // ""')
+            echo "RAGAS 17 status=$status conclusion=$conclusion"
+            if [ "$status" = "completed" ]; then
+              exit 0
+            fi
+            gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$STALE_RUN_ID/force-cancel" >/dev/null 2>&1 || true
+            sleep 5
+          done
+
+          echo "Force-cancel request submitted repeatedly; GitHub may still be propagating the run-level status."

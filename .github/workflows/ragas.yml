@@ -24,6 +24,7 @@ jobs:
       COHERE_BASE_URL: https://api.cohere.ai/compatibility/v1
       RAGAS_EVALUATOR_MODEL: command-r7b-12-2024
       RAGAS_MAX_TOKENS: "4000"
+      COHERE_MIN_CALL_INTERVAL_SECONDS: "4.0"
 
     steps:
       - name: Checkout repository

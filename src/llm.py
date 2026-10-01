@@ -3,6 +3,9 @@ from __future__ import annotations
 from openai import OpenAI
 
 from .config import (
+    COHERE_API_KEY,
+    COHERE_BASE_URL,
+    COHERE_MODEL,
     GEMINI_API_KEY,
     GEMINI_BASE_URL,
     GEMINI_MODEL,
@@ -31,6 +34,24 @@ def _source_prompt(question: str, contexts: list[dict]) -> str:
 
 def answer(question: str, contexts: list[dict]) -> str:
     prompt = _source_prompt(question, contexts)
+
+    if LLM_PROVIDER == "cohere":
+        if not COHERE_API_KEY:
+            raise RuntimeError("COHERE_API_KEY is not set")
+        client = OpenAI(
+            api_key=COHERE_API_KEY,
+            base_url=COHERE_BASE_URL,
+            max_retries=8,
+        )
+        resp = client.chat.completions.create(
+            model=COHERE_MODEL,
+            max_tokens=220,
+            messages=[
+                {"role": "system", "content": SYSTEM},
+                {"role": "user", "content": prompt},
+            ],
+        )
+        return (resp.choices[0].message.content or "").strip()
 
     if LLM_PROVIDER == "groq":
         if not GROQ_API_KEY:
@@ -72,7 +93,7 @@ def answer(question: str, contexts: list[dict]) -> str:
 
     if LLM_PROVIDER != "openai":
         raise RuntimeError(
-            f"Unsupported LLM_PROVIDER={LLM_PROVIDER!r}; use 'openai', 'gemini', or 'groq'."
+            f"Unsupported LLM_PROVIDER={LLM_PROVIDER!r}; use 'openai', 'gemini', 'groq', or 'cohere'."
         )
 
     if not OPENAI_API_KEY:

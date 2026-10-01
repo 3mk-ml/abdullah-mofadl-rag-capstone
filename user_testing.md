@@ -7,8 +7,8 @@ Three real users tested the live AgriRAG application and provided the feedback r
 | Tester | Background | Questions tried | Ease of use | Answer relevance | Sources useful? | Speed | Errors / freezing | Best part | Suggested improvement | Rating |
 |---|---|---|---|---|---|---|---|---|---|---|
 | Bakr | Not provided | Not recorded | Very easy | Very relevant | Yes | Slow | No | The summarized answer was useful and clear | Add Arabic language support | 4/5 |
-| Ali | Not provided | Not recorded | Very easy | Very relevant | Yes | Fast | No | UX/UI design | Add Arabic language support | Not provided |
-| Mazen | Not provided | Not recorded | Very easy | Very relevant | Yes | Fast | No | The topic / project idea | Add Arabic language support | Not provided |
+| Ali | Not provided | Not recorded | Very easy | Very relevant | Yes | Fast | No | UX/UI design | Add Arabic language support | 5/5 |
+| Mazen | Not provided | Not recorded | Very easy | Very relevant | Yes | Fast | No | The topic / project idea | Add Arabic language support | 5/5 |
 
 ## Feedback summary
 

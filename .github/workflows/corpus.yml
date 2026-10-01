@@ -15,7 +15,15 @@ on:
       - "data/eval/golden_questions.json"
       - "requirements.txt"
       - "app.py"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "railway.toml"
+      - "scripts/prepare_deploy.py"
       - ".github/workflows/corpus.yml"
+
+concurrency:
+  group: agrirag-project-validation
+  cancel-in-progress: true
 
 jobs:
   validate:

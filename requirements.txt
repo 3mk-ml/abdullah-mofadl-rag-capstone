@@ -9,6 +9,7 @@ numpy>=1.26
 pandas>=2.2
 datasets>=3.2
 ragas==0.4.3
+instructor==1.17.0
 pytest>=8.3
 requests>=2.32
 beautifulsoup4>=4.12

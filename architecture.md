@@ -68,13 +68,8 @@ The model is used through Cohere Chat V2 for the final app and was also used con
 
 The provider remains environment-controlled so another provider can be substituted without changing retrieval.
 
-## 9. Arabic handling
-- Multilingual E5 retrieval
-- Multilingual cross-encoder reranking
-- Conservative Unicode/whitespace normalization
-- Arabic-specific normalization in BM25 tokenization
-- Streamlit RTL mode
-- Amiri font for Arabic UI
+## 9. Interface language
+The submitted Streamlit interface is intentionally English-only. The retrieval stack remains multilingual-capable, but the Arabic UI option, RTL layout, and Amiri styling were removed from the final demo. The course guidance only requires RTL/Amiri when the interface itself is Arabic.
 
 ## 10. Evaluation
 
@@ -100,7 +95,7 @@ Questions: **20**
 The RAGAS report is committed at `data/eval/ragas_report.csv`; the machine-readable mean summary is at `data/eval/ragas_summary.json`.
 
 ## 11. Interface and authentication
-Streamlit provides the capstone UI. A shared password is loaded only from `APP_PASSWORD`; secrets are not committed. The app displays retrieved source snippets and page metadata so users can inspect evidence.
+Streamlit provides the English-only capstone UI, including a dropdown backed by the validated 30-question golden set and a custom-question option. A shared password is loaded only from `APP_PASSWORD`; secrets are not committed. The app displays retrieved source snippets and page metadata so users can inspect evidence.
 
 ## 12. Deployment
 The app is containerized. Railway is the primary deployment target; the same Docker image remains compatible with a Docker-based Hugging Face Space.

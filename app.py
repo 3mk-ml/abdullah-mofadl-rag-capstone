@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import logging
 
 import streamlit as st
 
@@ -15,6 +16,7 @@ st.set_page_config(
 )
 
 TOP_N = 5
+logger = logging.getLogger("agrirag")
 
 st.markdown(
     """
@@ -322,6 +324,7 @@ if st.button(ask_label, type="primary", use_container_width=False) and question.
         try:
             result = ask(question.strip(), top_n=TOP_N)
         except Exception:
+            logger.exception("AgriRAG query failed")
             if rtl:
                 st.error(
                     "تعذر إكمال السؤال الآن. تم تسجيل الخطأ في الخادم للمراجعة. "

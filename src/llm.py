@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from openai import OpenAI
+import cohere
 
 from .config import (
     COHERE_API_KEY,
@@ -38,20 +39,17 @@ def answer(question: str, contexts: list[dict]) -> str:
     if LLM_PROVIDER == "cohere":
         if not COHERE_API_KEY:
             raise RuntimeError("COHERE_API_KEY is not set")
-        client = OpenAI(
-            api_key=COHERE_API_KEY,
-            base_url=COHERE_BASE_URL,
-            max_retries=8,
-        )
-        resp = client.chat.completions.create(
+        client = cohere.ClientV2(api_key=COHERE_API_KEY)
+        resp = client.chat(
             model=COHERE_MODEL,
-            max_tokens=220,
+            max_tokens=180,
+            temperature=0.1,
             messages=[
                 {"role": "system", "content": SYSTEM},
                 {"role": "user", "content": prompt},
             ],
         )
-        return (resp.choices[0].message.content or "").strip()
+        return (resp.message.content[0].text or "").strip()
 
     if LLM_PROVIDER == "groq":
         if not GROQ_API_KEY:

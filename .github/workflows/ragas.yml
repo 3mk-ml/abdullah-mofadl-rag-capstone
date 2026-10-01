@@ -28,7 +28,7 @@ jobs:
       COHERE_MODEL: command-a-plus-05-2026
       COHERE_BASE_URL: https://api.cohere.ai/compatibility/v1
       RAGAS_EVALUATOR_MODEL: command-a-plus-05-2026
-      RAGAS_MAX_TOKENS: "1536"
+      RAGAS_MAX_TOKENS: "4096"
 
     steps:
       - name: Checkout repository
@@ -58,23 +58,38 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Smoke-test Cohere model access
+      - name: Smoke-test Cohere structured output through RAGAS
         run: |
           python - <<'PY'
+          import asyncio
           import os
-          from openai import OpenAI
-          client = OpenAI(
-              api_key=os.environ["COHERE_API_KEY"],
-              base_url=os.environ["COHERE_BASE_URL"],
-              max_retries=2,
-          )
-          r = client.chat.completions.create(
-              model=os.environ["COHERE_MODEL"],
-              max_tokens=8,
-              messages=[{"role": "user", "content": "Reply with OK."}],
-          )
-          assert r.choices and r.choices[0].message.content
-          print("Cohere model access passed")
+          from pydantic import BaseModel
+          from openai import AsyncOpenAI
+          from ragas.llms.base import llm_factory
+
+          class SmokeOutput(BaseModel):
+              ok: bool
+
+          async def main():
+              client = AsyncOpenAI(
+                  api_key=os.environ["COHERE_API_KEY"],
+                  base_url=os.environ["COHERE_BASE_URL"],
+                  max_retries=2,
+              )
+              llm = llm_factory(
+                  os.environ["COHERE_MODEL"],
+                  provider="openai",
+                  client=client,
+                  max_tokens=512,
+              )
+              result = await llm.agenerate(
+                  "Return a structured response with ok=true.",
+                  SmokeOutput,
+              )
+              assert result.ok is True
+              print("Cohere structured-output RAGAS smoke test passed")
+
+          asyncio.run(main())
           PY
 
       - name: Smoke-test RAGAS imports

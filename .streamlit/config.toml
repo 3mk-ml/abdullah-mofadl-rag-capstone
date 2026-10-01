@@ -2,6 +2,15 @@
 headless = true
 address = "0.0.0.0"
 port = 7860
+fileWatcherType = "none"
 
 [browser]
 gatherUsageStats = false
+
+[theme]
+base = "light"
+primaryColor = "#226241"
+backgroundColor = "#f4f8f3"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#173126"
+font = "sans serif"

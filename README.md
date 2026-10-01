@@ -254,7 +254,7 @@ The capstone's strict Recall@5 evaluation was produced with the local multilingu
 
 ## User testing
 
-The capstone requires testing with **three real users**. `user_testing.md` intentionally remains a real-user log and must not be fabricated. Each tester should sign in, ask straightforward and multi-concept questions, inspect evidence, and report what was confusing before the final submission.
+Three real users — Bakr, Ali, and Mazen — tested the live app. Their feedback is recorded in `user_testing.md`. All three found the interface very easy to use, rated the answers as very relevant, and found the displayed sources useful; all three also suggested adding Arabic-language support.
 
 ## Safety and scope
 
@@ -277,6 +277,6 @@ AgriRAG is an educational decision-support assistant, not a substitute for local
 - [x] Cost analysis with 1K / 10K / 100K scenarios
 - [x] Docker deployment configuration
 - [x] Live public demo URL
-- [ ] Three real-user tests recorded
+- [x] Three real-user tests recorded
 
-The only remaining unchecked project item is testing with three real users; that feedback must come from actual people and is deliberately not fabricated.
+All capstone checklist items are now completed. Final submission should include the public GitHub repository, live demo URL, one-page ADR, RAGAS results, cost analysis, and the completed real-user testing log.

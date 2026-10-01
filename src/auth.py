@@ -8,8 +8,10 @@ from .config import APP_PASSWORD
 
 def require_password() -> bool:
     if not APP_PASSWORD:
-        st.warning("APP_PASSWORD is not configured. Set it in .env or Space secrets before submission.")
-        return True
+        st.error(
+            "APP_PASSWORD is not configured. Set it as a deployment secret before using AgriRAG."
+        )
+        return False
 
     if st.session_state.get("authenticated"):
         return True

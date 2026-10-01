@@ -25,10 +25,10 @@ jobs:
       HF_HOME: ~/.cache/huggingface
       LLM_PROVIDER: cohere
       COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
-      COHERE_MODEL: command-a-plus-05-2026
+      COHERE_MODEL: command-r7b-12-2024
       COHERE_BASE_URL: https://api.cohere.ai/compatibility/v1
-      RAGAS_EVALUATOR_MODEL: command-a-plus-05-2026
-      RAGAS_MAX_TOKENS: "4096"
+      RAGAS_EVALUATOR_MODEL: command-r7b-12-2024
+      RAGAS_MAX_TOKENS: "4000"
 
     steps:
       - name: Checkout repository
@@ -66,39 +66,25 @@ jobs:
           python - <<'PY'
           import asyncio
           import os
-          import instructor
-          from openai import AsyncOpenAI
-          from ragas.llms.base import InstructorLLM
+          from scripts.evaluate_ragas import CohereNativeRagasLLM
           from ragas.metrics.collections.faithfulness import Faithfulness
 
           async def main():
-              raw = AsyncOpenAI(
+              llm = CohereNativeRagasLLM(
                   api_key=os.environ["COHERE_API_KEY"],
-                  base_url=os.environ["COHERE_BASE_URL"],
-                  max_retries=2,
-              )
-              patched = instructor.from_openai(
-                  raw,
-                  mode=instructor.Mode.JSON_SCHEMA,
-              )
-              llm = InstructorLLM(
-                  client=patched,
                   model=os.environ["COHERE_MODEL"],
-                  provider="cohere",
-                  max_tokens=4096,
-                  temperature=0.01,
-                  top_p=0.1,
+                  max_tokens=4000,
               )
               metric = Faithfulness(llm=llm)
               score = await metric.ascore(
                   user_input="What is crop evapotranspiration?",
-                  response="Crop evapotranspiration is the crop water use represented by ETc.",
+                  response="Crop evapotranspiration is denoted ETc.",
                   retrieved_contexts=[
-                      "Crop evapotranspiration is denoted ETc and represents evapotranspiration from a crop."
+                      "Crop evapotranspiration is denoted ETc."
                   ],
               )
               assert 0.0 <= float(score.value) <= 1.0
-              print("Cohere JSON_SCHEMA + real RAGAS Faithfulness smoke test passed:", score.value)
+              print("Cohere native JSON Schema + RAGAS Faithfulness passed:", score.value)
 
           asyncio.run(main())
           PY

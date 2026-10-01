@@ -2,7 +2,8 @@
 
 AgriRAG is a production-style Retrieval-Augmented Generation capstone for irrigation, soil fertility, plant nutrition, crop water stress, water harvesting, and climate-smart agriculture. It was built for the Yemen4LLM Track B Week 3 RAG capstone.
 
-**Repository:** https://github.com/3mk-ml/abdullah-mofadl-rag-capstone
+**Repository:** https://github.com/3mk-ml/abdullah-mofadl-rag-capstone  
+**Live demo:** https://agrirag-production.up.railway.app
 
 ## Final verified results
 
@@ -222,6 +223,12 @@ With the report's conservative 2,500-input / 250-output token planning envelope,
 
 Embedding and reranking API cost is $0 because both are local.
 
+## Live deployment
+
+Production URL: **https://agrirag-production.up.railway.app**
+
+Railway's deployment completed successfully and the Streamlit health endpoint `/_stcore/health` returned HTTP 200 after deployment.
+
 ## Docker / Railway deployment
 
 The Docker image runs Streamlit on the platform-provided `PORT` (falling back to 7860). `railway.toml` contains the deployment health check.
@@ -261,7 +268,7 @@ AgriRAG is an educational decision-support assistant, not a substitute for local
 - [x] One-page accepted ADR
 - [x] Cost analysis with 1K / 10K / 100K scenarios
 - [x] Docker deployment configuration
-- [ ] Live public demo URL
+- [x] Live public demo URL
 - [ ] Three real-user tests recorded
 
 The final two unchecked items require an external hosting account and actual human testers; they are deliberately not fabricated.

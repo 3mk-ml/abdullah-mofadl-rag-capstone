@@ -1,0 +1,39 @@
+name: Cancel all runs except RAGAS 18
+
+on:
+  push:
+    paths:
+      - ".github/workflows/cancel-others.yml"
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  cancel:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      KEEP_RUN_ID: "36803926630"
+      SELF_RUN_ID: ${{ github.run_id }}
+    steps:
+      - name: Cancel every active workflow except the target RAGAS run
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Keeping target run: $KEEP_RUN_ID"
+          echo "Keeping cleanup run until it finishes: $SELF_RUN_ID"
+
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs?per_page=100"             --jq '.workflow_runs[] | select(.status == "queued" or .status == "in_progress" or .status == "pending" or .status == "waiting" or .status == "requested") | .id'             > /tmp/active-runs.txt
+
+          while read -r run_id; do
+            [ -z "$run_id" ] && continue
+            if [ "$run_id" = "$KEEP_RUN_ID" ] || [ "$run_id" = "$SELF_RUN_ID" ]; then
+              echo "Keeping $run_id"
+              continue
+            fi
+            echo "Cancelling $run_id"
+            gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/cancel" >/dev/null || true
+          done < /tmp/active-runs.txt
+
+          echo "Cancellation requests sent."

@@ -42,14 +42,19 @@ At 5,540 chunks, a managed vector service would add infrastructure without solvi
 - Vector candidates: top 20
 - BM25 candidates: top 20
 - Fusion: Reciprocal Rank Fusion, `RRF_K=60`
-- Final reranked evidence: top 5
+- Final reranked evidence: **fixed top 5**
 
 Vector search covers semantic paraphrase; BM25 covers exact technical terms, crop names, acronyms, and units. RRF avoids comparing incompatible raw BM25 and cosine-score scales.
 
 ## 7. Reranker
-**Choice:** `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`, local CPU inference.
 
-The reranker jointly scores question + passage and improves final evidence precision after broad hybrid candidate retrieval. Keeping it local removes per-query rerank API cost.
+**Validated local/CI choice:** `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`.
+
+The strict 30-question Recall@5 result was measured with this local multilingual cross-encoder. It jointly scores question + passage after vector + BM25 + RRF candidate generation.
+
+**Railway live-demo choice:** Cohere `rerank-v3.5`.
+
+The Railway service currently has a 1 GB memory ceiling. Runtime metrics showed the service reaching approximately 0.986 GB and being killed when the local E5 embedder and local cross-encoder were both resident. The live service therefore keeps E5 local but performs the reranking step through Cohere's multilingual Rerank API. This preserves the hybrid + reranking architecture without exceeding the container limit. The final answer still receives exactly five reranked evidence passages.
 
 ## 8. Generator
 **Final choice:** Cohere `command-r7b-12-2024`.

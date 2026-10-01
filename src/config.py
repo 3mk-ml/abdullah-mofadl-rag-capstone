@@ -19,7 +19,7 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-small")
 RERANKER_MODEL = os.getenv(
     "RERANKER_MODEL", "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
 )
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai").strip().lower()
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "cohere").strip().lower()
 
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.6-luna")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")

@@ -11,7 +11,9 @@ import os
 import re
 
 import pandas as pd
+import instructor
 from openai import AsyncOpenAI, RateLimitError
+from instructor.exceptions import IncompleteOutputException
 
 from src.config import (
     COHERE_API_KEY,
@@ -30,7 +32,7 @@ from src.config import (
 )
 from src.rag_pipeline import ask
 
-from ragas.llms.base import llm_factory
+from ragas.llms.base import InstructorLLM, llm_factory
 from ragas.embeddings.base import embedding_factory
 from ragas.metrics.collections.faithfulness import Faithfulness
 from ragas.metrics.collections.answer_relevancy import AnswerRelevancy
@@ -53,9 +55,15 @@ def _retry_delay_seconds(exc: Exception) -> float:
     return 60.0
 
 
-async def _with_quota_wait(label: str, factory, max_waits: int = 8):
-    """Wait for a provider rate-limit window instead of failing the workflow."""
+async def _with_quota_wait(
+    label: str,
+    factory,
+    max_waits: int = 8,
+    max_incomplete_retries: int = 3,
+):
+    """Retry provider quota errors and occasional incomplete structured outputs."""
     waits = 0
+    incomplete_retries = 0
     while True:
         try:
             return await factory()
@@ -71,6 +79,17 @@ async def _with_quota_wait(label: str, factory, max_waits: int = 8):
                 flush=True,
             )
             await asyncio.sleep(delay)
+        except IncompleteOutputException:
+            incomplete_retries += 1
+            if incomplete_retries > max_incomplete_retries:
+                raise
+            print(
+                f"Incomplete structured output during {label}; "
+                f"retrying with native JSON Schema "
+                f"({incomplete_retries}/{max_incomplete_retries}).",
+                flush=True,
+            )
+            await asyncio.sleep(2.0)
 
 
 async def _ask_with_quota_wait(question: str, top_n: int = 5) -> dict:
@@ -149,12 +168,14 @@ def save_checkpoint(
     evaluator_model: str,
     generator_model: str,
     rows: list[dict],
+    structured_mode: str,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "llm_provider": provider,
         "evaluator_model": evaluator_model,
         "generator_model": generator_model,
+        "structured_mode": structured_mode,
         "completed": len(rows),
         "rows": rows,
     }
@@ -169,6 +190,7 @@ def load_checkpoint(
     provider: str,
     evaluator_model: str,
     generator_model: str,
+    structured_mode: str,
 ) -> list[dict]:
     if not path.exists():
         return []
@@ -180,6 +202,7 @@ def load_checkpoint(
         payload.get("llm_provider") != provider
         or payload.get("evaluator_model") != evaluator_model
         or payload.get("generator_model") != generator_model
+        or payload.get("structured_mode") != structured_mode
     ):
         print("Ignoring checkpoint from a different provider/model.", flush=True)
         return []
@@ -257,18 +280,38 @@ async def run(
         flush=True,
     )
 
-    evaluator_kwargs = {
-        "provider": ragas_provider,
-        "client": client,
-        "max_tokens": evaluator_max_tokens,
-    }
-    if LLM_PROVIDER == "groq" and evaluator_model.startswith("openai/gpt-oss-"):
-        evaluator_kwargs["reasoning_effort"] = "low"
+    structured_mode = "ragas_default"
+    if LLM_PROVIDER == "cohere":
+        # RAGAS 0.4.3 hard-codes Instructor Mode.JSON for OpenAI-compatible
+        # clients. Cohere supports native JSON Schema, so bypass that factory
+        # and wrap the same AsyncOpenAI-compatible client explicitly.
+        structured_mode = "json_schema_v1"
+        patched_client = instructor.from_openai(
+            client,
+            mode=instructor.Mode.JSON_SCHEMA,
+        )
+        evaluator_llm = InstructorLLM(
+            client=patched_client,
+            model=evaluator_model,
+            provider="cohere",
+            max_tokens=evaluator_max_tokens,
+            temperature=0.01,
+            top_p=0.1,
+        )
+        print("Structured output mode: Instructor JSON_SCHEMA", flush=True)
+    else:
+        evaluator_kwargs = {
+            "provider": ragas_provider,
+            "client": client,
+            "max_tokens": evaluator_max_tokens,
+        }
+        if LLM_PROVIDER == "groq" and evaluator_model.startswith("openai/gpt-oss-"):
+            evaluator_kwargs["reasoning_effort"] = "low"
 
-    evaluator_llm = llm_factory(
-        evaluator_model,
-        **evaluator_kwargs,
-    )
+        evaluator_llm = llm_factory(
+            evaluator_model,
+            **evaluator_kwargs,
+        )
 
     if LLM_PROVIDER in {"groq", "cohere"}:
         evaluator_embeddings = embedding_factory(
@@ -297,7 +340,12 @@ async def run(
         checkpoint_path,
         provider=LLM_PROVIDER,
         evaluator_model=evaluator_model,
-        generator_model=GROQ_MODEL if LLM_PROVIDER == "groq" else evaluator_model,
+        generator_model=(
+            GROQ_MODEL if LLM_PROVIDER == "groq"
+            else COHERE_MODEL if LLM_PROVIDER == "cohere"
+            else evaluator_model
+        ),
+        structured_mode=structured_mode,
     )
     done_ids = {r.get("id") for r in rows}
 
@@ -317,8 +365,13 @@ async def run(
             checkpoint_path,
             provider=LLM_PROVIDER,
             evaluator_model=evaluator_model,
-            generator_model=GROQ_MODEL if LLM_PROVIDER == "groq" else evaluator_model,
+            generator_model=(
+                GROQ_MODEL if LLM_PROVIDER == "groq"
+                else COHERE_MODEL if LLM_PROVIDER == "cohere"
+                else evaluator_model
+            ),
             rows=rows,
+            structured_mode=structured_mode,
         )
 
         print(
@@ -351,7 +404,12 @@ async def run(
         **{k: float(v) for k, v in df[metric_cols].mean().to_dict().items()},
         "mean_latency_seconds": float(df["latency_seconds"].mean()),
         "evaluator_model": evaluator_model,
-        "generator_model": GROQ_MODEL if LLM_PROVIDER == "groq" else evaluator_model,
+        "generator_model": (
+            GROQ_MODEL if LLM_PROVIDER == "groq"
+            else COHERE_MODEL if LLM_PROVIDER == "cohere"
+            else evaluator_model
+        ),
+        "structured_mode": structured_mode,
         "evaluator_max_tokens": evaluator_max_tokens,
         "llm_provider": LLM_PROVIDER,
     }

@@ -11,7 +11,7 @@ AgriRAG uses 20 successfully collected authoritative agriculture documents from 
 
 Documents are extracted with PyMuPDF and split using recursive structure-aware chunking at about 350 tokens with 60-token overlap. Local `intfloat/multilingual-e5-small` embeddings are stored in persistent Chroma. Retrieval combines vector top-20 and BM25 top-20 results with Reciprocal Rank Fusion (`RRF_K=60`). A local `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` reranks the fused candidates and returns the best five evidence passages.
 
-The final generator is Cohere `command-r7b-12-2024`. The prompt requires answers to use retrieved evidence, preserve units, expose insufficient evidence instead of inventing thresholds or doses, and cite sources. Streamlit provides English/Arabic UI, RTL/Amiri styling, source excerpts, latency display, and shared-password authentication. Docker is the deployment boundary and Railway is the primary hosting target.
+The final generator is Cohere `command-r7b-12-2024`. The prompt requires answers to use retrieved evidence, preserve units, expose insufficient evidence instead of inventing thresholds or doses, and cite sources. Streamlit provides a polished English-only UI, a validated question picker, source excerpts, latency display, and shared-password authentication. Docker is the deployment boundary and Railway is the primary hosting target.
 
 ## Evidence
 The final corpus produced **1,828 extracted pages/units and 5,540 chunks**.

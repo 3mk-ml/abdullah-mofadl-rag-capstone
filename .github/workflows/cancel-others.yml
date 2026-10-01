@@ -17,7 +17,7 @@ jobs:
       KEEP_RUN_ID: "36803926630"
       SELF_RUN_ID: ${{ github.run_id }}
     steps:
-      - name: Cancel every active workflow except the target RAGAS run
+      - name: Force-cancel every active workflow except the target RAGAS run
         shell: bash
         run: |
           set -euo pipefail
@@ -32,8 +32,12 @@ jobs:
               echo "Keeping $run_id"
               continue
             fi
+
             echo "Cancelling $run_id"
-            gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/cancel" >/dev/null || true
+            if ! gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/cancel" >/dev/null 2>&1; then
+              echo "Normal cancel did not apply; force-cancelling $run_id"
+              gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/force-cancel" >/dev/null 2>&1 || true
+            fi
           done < /tmp/active-runs.txt
 
-          echo "Cancellation requests sent."
+          echo "All cancellation requests sent."

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from pathlib import Path
+import json
 import logging
+from pathlib import Path
 
 import streamlit as st
 
@@ -16,21 +17,44 @@ st.set_page_config(
 )
 
 TOP_N = 5
+ROOT = Path(__file__).resolve().parent
+QUESTION_BANK = ROOT / "data" / "eval" / "golden_questions.json"
 logger = logging.getLogger("agrirag")
+
+
+@st.cache_data(show_spinner=False)
+def load_sample_questions() -> list[str]:
+    try:
+        payload = json.loads(QUESTION_BANK.read_text(encoding="utf-8"))
+        questions = [
+            item["question"].strip()
+            for item in payload.get("questions", [])
+            if item.get("question")
+        ]
+        return questions
+    except Exception:
+        logger.exception("Could not load the sample-question bank")
+        return [
+            "How does FAO define reference evapotranspiration (ETo)?",
+            "How can salinity in irrigation water reduce crop growth and yield?",
+            "What is deficit irrigation?",
+            "What are the three main objectives of climate-smart agriculture?",
+            "How does soil organic matter improve soil structure, water management, and nutrient retention?",
+        ]
+
 
 st.markdown(
     """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
   color-scheme: light;
   --forest: #174a32;
   --forest-2: #226241;
   --leaf: #2d7a50;
-  --leaf-soft: #eaf4ec;
-  --cream: #fbfaf5;
   --paper: #ffffff;
+  --page: #f4f8f3;
   --ink: #173126;
   --muted: #64746b;
   --line: #dbe7dd;
@@ -39,12 +63,12 @@ st.markdown(
 
 html, body, .stApp {
   font-family: 'Inter', Arial, sans-serif;
-  background: #f4f8f3 !important;
+  background: var(--page) !important;
   color: var(--ink) !important;
 }
 
 [data-testid="stHeader"] {
-  background: rgba(244, 248, 243, 0.92) !important;
+  background: rgba(244, 248, 243, .92) !important;
   backdrop-filter: blur(8px);
 }
 
@@ -74,12 +98,12 @@ html, body, .stApp {
   color: #ffffff !important;
   border-radius: 24px;
   padding: 2.2rem 2.3rem;
-  box-shadow: 0 18px 48px rgba(23, 74, 50, .16);
-  margin-bottom: 1.4rem;
+  box-shadow: 0 18px 48px rgba(23,74,50,.16);
+  margin-bottom: .85rem;
   border: 1px solid rgba(255,255,255,.12);
 }
 
-.hero h1, .hero h2, .hero p, .hero span {
+.hero h1, .hero p, .hero span, .hero strong {
   color: #ffffff !important;
 }
 
@@ -91,9 +115,9 @@ html, body, .stApp {
 
 .hero p {
   margin: 0;
-  max-width: 780px;
+  max-width: 820px;
   font-size: 1.05rem;
-  opacity: .92;
+  opacity: .93;
 }
 
 .pill-row {
@@ -106,13 +130,22 @@ html, body, .stApp {
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: .35rem;
   background: rgba(255,255,255,.12);
   border: 1px solid rgba(255,255,255,.18);
   color: #ffffff !important;
   border-radius: 999px;
   padding: .38rem .7rem;
   font-size: .82rem;
+}
+
+.byline {
+  color: #52675a !important;
+  font-size: .9rem;
+  margin: .2rem 0 1rem .15rem;
+}
+
+.byline strong {
+  color: var(--forest) !important;
 }
 
 .info-strip {
@@ -128,7 +161,7 @@ html, body, .stApp {
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: .9rem 1rem;
-  box-shadow: 0 8px 24px rgba(24, 59, 40, .05);
+  box-shadow: 0 8px 24px rgba(24,59,40,.05);
 }
 
 .info-card strong, .info-card span {
@@ -142,13 +175,17 @@ html, body, .stApp {
   margin-top: .15rem;
 }
 
+[data-testid="stSelectbox"] > div > div,
 [data-testid="stTextArea"] textarea,
 [data-testid="stTextInput"] input {
   background: #ffffff !important;
   color: #173126 !important;
-  border: 1px solid #cbdace !important;
+  border-color: #cbdace !important;
+}
+
+[data-testid="stTextArea"] textarea {
   border-radius: 14px !important;
-  box-shadow: 0 6px 18px rgba(28, 67, 44, .04);
+  box-shadow: 0 6px 18px rgba(28,67,44,.04);
 }
 
 [data-testid="stTextArea"] textarea::placeholder,
@@ -159,7 +196,7 @@ html, body, .stApp {
 
 [data-testid="stTextArea"] label,
 [data-testid="stTextInput"] label,
-[data-testid="stRadio"] label,
+[data-testid="stSelectbox"] label,
 [data-testid="stMarkdownContainer"],
 .stCaption,
 p, li, h1, h2, h3, h4 {
@@ -174,11 +211,15 @@ div.stButton > button[kind="primary"] {
   min-height: 44px;
   font-weight: 700;
   padding: .55rem 1.2rem;
-  box-shadow: 0 8px 18px rgba(31, 101, 66, .18);
+  box-shadow: 0 8px 18px rgba(31,101,66,.18);
 }
 
 div.stButton > button[kind="primary"]:hover {
   background: #174a32 !important;
+}
+
+[data-testid="stAlert"] {
+  border-radius: 14px !important;
 }
 
 [data-testid="stExpander"] {
@@ -215,14 +256,21 @@ div.stButton > button[kind="primary"]:hover {
   margin-top: .35rem;
 }
 
-hr {
-  border-color: var(--line) !important;
+.footer {
+  margin-top: 2.4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted) !important;
+  font-size: .84rem;
+  text-align: center;
 }
 
-.rtl, .rtl * {
-  direction: rtl;
-  text-align: right;
-  font-family: 'Amiri', serif !important;
+.footer strong {
+  color: var(--forest) !important;
+}
+
+hr {
+  border-color: var(--line) !important;
 }
 
 @media (max-width: 800px) {
@@ -240,58 +288,17 @@ if not require_password():
 
 with st.sidebar:
     st.markdown("### 🌿 AgriRAG")
-    language = st.radio(
-        "Interface / الواجهة",
-        ["العربية", "English"],
-        horizontal=True,
-    )
+    st.caption("Evidence-grounded agriculture assistant")
     st.divider()
-    if language == "العربية":
-        st.markdown("**طريقة الاسترجاع**")
-        st.caption("بحث هجين: Vector + BM25 + RRF، ثم إعادة ترتيب متعددة اللغات.")
-        st.markdown("**الأدلة المعروضة:** أفضل 5 مقاطع")
-        st.caption("نفس عدد المقاطع المستخدم في التقييم النهائي.")
-    else:
-        st.markdown("**Retrieval pipeline**")
-        st.caption("Hybrid search: Vector + BM25 + RRF, then multilingual reranking.")
-        st.markdown("**Evidence shown:** Top 5 passages")
-        st.caption("Matches the final validated evaluation setting.")
+    st.markdown("**Retrieval pipeline**")
+    st.caption("Vector + BM25 + RRF, followed by multilingual reranking.")
+    st.markdown("**Evidence shown**")
+    st.caption("Top 5 reranked passages, matching the validated evaluation setting.")
+    st.divider()
+    st.markdown("**Done by:** Abdullah Mofadl")
 
-rtl = language == "العربية"
-
-if rtl:
-    st.markdown('<div class="rtl">', unsafe_allow_html=True)
-    st.markdown(
-        """
-<div class="hero">
-  <h1>🌿 AgriRAG</h1>
-  <p>مساعد زراعي يعتمد على الأدلة والمصادر الموثوقة في الري، التربة، تغذية النبات، حصاد المياه والزراعة الذكية مناخياً.</p>
-  <div class="pill-row">
-    <span class="pill">✓ بحث هجين</span>
-    <span class="pill">✓ أفضل 5 مصادر</span>
-    <span class="pill">✓ إجابات موثقة</span>
-  </div>
-</div>
-<div class="info-strip">
-  <div class="info-card"><strong>90%</strong><span>Recall@5 النهائي</span></div>
-  <div class="info-card"><strong>20/20</strong><span>أسئلة RAGAS مكتملة</span></div>
-  <div class="info-card"><strong>5</strong><span>مقاطع أدلة لكل إجابة</span></div>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
-    question = st.text_area(
-        "اكتب سؤالك الزراعي",
-        placeholder="مثال: كيف تؤثر ملوحة مياه الري على نمو المحاصيل؟",
-        height=120,
-    )
-    ask_label = "اسأل AgriRAG"
-    spinner_label = "جاري البحث في المصادر وإعادة ترتيب الأدلة..."
-    answer_title = "الإجابة المستندة إلى الأدلة"
-    source_title = "المصادر والأدلة المستخدمة"
-else:
-    st.markdown(
-        """
+st.markdown(
+    """
 <div class="hero">
   <h1>🌿 AgriRAG</h1>
   <p>An evidence-grounded agriculture assistant for irrigation, soils, plant nutrition, water harvesting, and climate-smart agriculture.</p>
@@ -301,53 +308,54 @@ else:
     <span class="pill">✓ Source-grounded answers</span>
   </div>
 </div>
+<div class="byline">Done by: <strong>Abdullah Mofadl</strong></div>
 <div class="info-strip">
   <div class="info-card"><strong>90%</strong><span>Final Recall@5</span></div>
   <div class="info-card"><strong>20/20</strong><span>RAGAS questions completed</span></div>
   <div class="info-card"><strong>5</strong><span>Evidence passages per answer</span></div>
 </div>
 """,
-        unsafe_allow_html=True,
-    )
+    unsafe_allow_html=True,
+)
+
+sample_questions = load_sample_questions()
+question_mode = st.selectbox(
+    "Choose a question",
+    ["Write my own question"] + sample_questions,
+    index=0,
+    help="The list contains the validated golden-question bank used for retrieval evaluation.",
+)
+
+if question_mode == "Write my own question":
     question = st.text_area(
-        "Ask an agriculture question",
+        "Your question",
         placeholder="Example: How does irrigation-water salinity affect crop growth?",
         height=120,
     )
-    ask_label = "Ask AgriRAG"
-    spinner_label = "Searching sources and reranking evidence..."
-    answer_title = "Evidence-grounded answer"
-    source_title = "Sources and evidence used"
+else:
+    question = question_mode
+    st.info(f"Selected question: {question}")
 
-if st.button(ask_label, type="primary", use_container_width=False) and question.strip():
-    with st.spinner(spinner_label):
+if st.button("Ask AgriRAG", type="primary") and question.strip():
+    with st.spinner("Searching sources and reranking evidence..."):
         try:
             result = ask(question.strip(), top_n=TOP_N)
         except Exception:
             logger.exception("AgriRAG query failed")
-            if rtl:
-                st.error(
-                    "تعذر إكمال السؤال الآن. تم تسجيل الخطأ في الخادم للمراجعة. "
-                    "حاول مرة أخرى بعد لحظات."
-                )
-            else:
-                st.error(
-                    "The question could not be completed right now. "
-                    "The server error has been logged; please try again shortly."
-                )
+            st.error(
+                "The question could not be completed right now. "
+                "The server error has been logged; please try again shortly."
+            )
         else:
             st.markdown(
-                f'<div class="answer-heading">🌱 {answer_title}</div>',
+                '<div class="answer-heading">🌱 Evidence-grounded answer</div>',
                 unsafe_allow_html=True,
             )
             st.markdown(result["answer"])
-            if rtl:
-                st.caption(f"زمن الإجابة: {result['latency_seconds']:.2f} ثانية")
-            else:
-                st.caption(f"Answer latency: {result['latency_seconds']:.2f}s")
+            st.caption(f"Answer latency: {result['latency_seconds']:.2f}s")
 
             with st.expander(
-                f"📚 {source_title} ({len(result['sources'])})",
+                f"📚 Sources and evidence used ({len(result['sources'])})",
                 expanded=True,
             ):
                 for i, source in enumerate(result["sources"], start=1):
@@ -372,18 +380,13 @@ if st.button(ask_label, type="primary", use_container_width=False) and question.
                     if i < len(result["sources"]):
                         st.divider()
 
-            if rtl:
-                st.markdown(
-                    '<div class="small-note">يعرض النظام أفضل 5 مقاطع أدلة فقط '
-                    'للحفاظ على اتساقه مع إعداد التقييم النهائي.</div>',
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    '<div class="small-note">AgriRAG shows only the top 5 reranked '
-                    'evidence passages to match the final validated evaluation setup.</div>',
-                    unsafe_allow_html=True,
-                )
+            st.markdown(
+                '<div class="small-note">AgriRAG shows only the top 5 reranked '
+                'evidence passages to match the final validated evaluation setup.</div>',
+                unsafe_allow_html=True,
+            )
 
-if rtl:
-    st.markdown("</div>", unsafe_allow_html=True)
+st.markdown(
+    '<div class="footer">AgriRAG · Done by: <strong>Abdullah Mofadl</strong></div>',
+    unsafe_allow_html=True,
+)

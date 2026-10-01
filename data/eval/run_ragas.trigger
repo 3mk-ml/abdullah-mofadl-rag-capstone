@@ -1,1 +1,1 @@
-Retry final RAGAS with native Cohere Chat V2 JSON Schema and command-r7b-12-2024; no Instructor compatibility layer.
+Start unblocked native Cohere R7B RAGAS run after removing stale workflow concurrency.

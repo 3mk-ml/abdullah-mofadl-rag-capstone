@@ -6,11 +6,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import argparse
 import asyncio
+import copy
 import json
 import os
 import re
 
 import pandas as pd
+import cohere
 import instructor
 from openai import AsyncOpenAI, RateLimitError
 from instructor.exceptions import IncompleteOutputException
@@ -38,6 +40,66 @@ from ragas.metrics.collections.faithfulness import Faithfulness
 from ragas.metrics.collections.answer_relevancy import AnswerRelevancy
 from ragas.metrics.collections.context_precision import ContextPrecision
 from ragas.metrics.collections.context_recall import ContextRecall
+
+
+def _cohere_schema(model_cls):
+    """Inline local Pydantic refs for Cohere's native JSON Schema endpoint."""
+    schema = copy.deepcopy(model_cls.model_json_schema())
+    defs = schema.pop("$defs", {})
+
+    def expand(node):
+        if isinstance(node, list):
+            return [expand(x) for x in node]
+        if not isinstance(node, dict):
+            return node
+
+        if "$ref" in node and node["$ref"].startswith("#/$defs/"):
+            name = node["$ref"].split("/")[-1]
+            base = copy.deepcopy(defs[name])
+            extra = {k: v for k, v in node.items() if k != "$ref"}
+            base.update(extra)
+            return expand(base)
+
+        out = {}
+        for key, value in node.items():
+            if key in {"$defs", "title", "default"}:
+                continue
+            out[key] = expand(value)
+        return out
+
+    return expand(schema)
+
+
+class CohereNativeRagasLLM:
+    """Minimal RAGAS LLM adapter backed by Cohere Chat V2 JSON Schema."""
+
+    def __init__(self, api_key: str, model: str, max_tokens: int):
+        self.client = cohere.AsyncClientV2(api_key=api_key)
+        self.model = model
+        self.max_tokens = max_tokens
+
+    async def agenerate(self, prompt: str, response_model):
+        schema = _cohere_schema(response_model)
+        response = await self.client.chat(
+            model=self.model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": (
+                        prompt
+                        + "\n\nReturn only a JSON object matching the required schema."
+                    ),
+                }
+            ],
+            response_format={"type": "json_object", "schema": schema},
+            temperature=0,
+            max_tokens=self.max_tokens,
+        )
+        text = response.message.content[0].text
+        return response_model.model_validate_json(text)
+
+    def generate(self, prompt: str, response_model):
+        raise TypeError("CohereNativeRagasLLM is async-only for this evaluation.")
 
 
 def _retry_delay_seconds(exc: Exception) -> float:
@@ -282,23 +344,13 @@ async def run(
 
     structured_mode = "ragas_default"
     if LLM_PROVIDER == "cohere":
-        # RAGAS 0.4.3 hard-codes Instructor Mode.JSON for OpenAI-compatible
-        # clients. Cohere supports native JSON Schema, so bypass that factory
-        # and wrap the same AsyncOpenAI-compatible client explicitly.
-        structured_mode = "json_schema_v1"
-        patched_client = instructor.from_openai(
-            client,
-            mode=instructor.Mode.JSON_SCHEMA,
-        )
-        evaluator_llm = InstructorLLM(
-            client=patched_client,
+        structured_mode = "cohere_native_json_schema_v1"
+        evaluator_llm = CohereNativeRagasLLM(
+            api_key=COHERE_API_KEY,
             model=evaluator_model,
-            provider="cohere",
             max_tokens=evaluator_max_tokens,
-            temperature=0.01,
-            top_p=0.1,
         )
-        print("Structured output mode: Instructor JSON_SCHEMA", flush=True)
+        print("Structured output mode: Cohere native Chat V2 JSON Schema", flush=True)
     else:
         evaluator_kwargs = {
             "provider": ragas_provider,

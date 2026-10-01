@@ -1,5 +1,7 @@
 # 🌿 AgriRAG — Evidence-Grounded Agriculture Assistant
 
+**Done by:** Abdullah Mofadl
+
 AgriRAG is a production-style Retrieval-Augmented Generation capstone for irrigation, soil fertility, plant nutrition, crop water stress, water harvesting, and climate-smart agriculture. It was built for the Yemen4LLM Track B Week 3 RAG capstone.
 
 **Repository:** https://github.com/3mk-ml/abdullah-mofadl-rag-capstone  
@@ -42,7 +44,7 @@ Official agriculture documents
   -> Chroma vector index + BM25 index
 
 ONLINE
-Arabic/English question
+English agriculture question
   -> E5 query embedding
   -> vector top-20 + BM25 top-20
   -> Reciprocal Rank Fusion
@@ -200,9 +202,9 @@ streamlit run app.py
 ```
 
 Features:
-- English and Arabic modes
-- Arabic RTL layout
-- Amiri typography
+- polished English-only interface
+- dropdown question picker backed by the validated 30-question golden set
+- custom-question input
 - shared-password authentication
 - vector + BM25 + RRF hybrid retrieval
 - multilingual reranking
@@ -268,7 +270,7 @@ AgriRAG is an educational decision-support assistant, not a substitute for local
 - [x] Recall@5 >= 80% (**90.00%**)
 - [x] Streamlit UI
 - [x] Authentication implementation
-- [x] Arabic RTL / Amiri support
+- [x] Polished English-only UI (RTL/Amiri not applicable because Arabic mode was removed)
 - [x] 20-question RAGAS report
 - [x] Final RAGAS metrics in README
 - [x] One-page accepted ADR
@@ -277,4 +279,4 @@ AgriRAG is an educational decision-support assistant, not a substitute for local
 - [x] Live public demo URL
 - [ ] Three real-user tests recorded
 
-The final two unchecked items require an external hosting account and actual human testers; they are deliberately not fabricated.
+The only remaining unchecked project item is testing with three real users; that feedback must come from actual people and is deliberately not fabricated.

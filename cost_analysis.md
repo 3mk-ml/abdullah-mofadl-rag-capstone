@@ -78,11 +78,6 @@ If Railway resource usage stays inside the included $5, a simple planning floor 
 
 Actual Railway usage can exceed the included amount and must be read from the live deployment invoice/usage dashboard.
 
-### Hugging Face Spaces
-Hugging Face lists CPU Basic hardware at no hourly hardware charge, but its current Spaces documentation says creating a new Gradio/Docker compute Space requires a paid plan. For that reason, this report does not claim a $0 end-to-end hosted deployment.
-
-Official pricing: https://huggingface.co/pricing
-
 ## 6. Competitor comparison
 
 The course appendix asks for comparison with Mendeley and Zotero.
@@ -90,12 +85,12 @@ The course appendix asks for comparison with Mendeley and Zotero.
 | Product | Current public pricing / AI position | Comparison with AgriRAG |
 |---|---|---|
 | Mendeley | Free plan includes 5 Reading Assistant questions. Plus is $4.99/month, Pro $9.99/month, Max $14.99/month. Pro/Max include Ask My Library. | Mature reference manager with integrated research AI. AgriRAG is narrower: agriculture-only, custom corpus, explicit hybrid retrieval, local reranking, and reproducible RAG evaluation. |
-| Zotero | Core Zotero is open source. Individual storage is 300 MB free, 2 GB $20/year, 6 GB $60/year, unlimited $120/year. Zotero team guidance in 2026 stated that core Zotero did not use generative AI; AI functionality depends on separate third-party plugins/services. | Excellent reference-management baseline, but not a directly comparable built-in RAG assistant. AgriRAG provides an integrated domain RAG pipeline rather than citation/library management. |
+| Zotero | Zotero is a free research/reference manager; optional individual file storage is 300 MB free, 2 GB $20/year, 6 GB $60/year, or unlimited $120/year. | Zotero is primarily a reference-management and research-organization product, so its public storage pricing is not directly comparable to AgriRAG's per-query LLM inference cost. |
 
 Official sources:
 - Mendeley pricing: https://www.mendeley.com/pricing/
 - Zotero storage: https://www.zotero.org/storage/
-- Zotero project/software terms: https://www.zotero.org/support/terms/terms_of_service
+- Zotero overview: https://www.zotero.org/support/quick_start_guide
 
 ## 7. Suggested client pricing
 

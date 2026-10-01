@@ -17,11 +17,11 @@ def require_password() -> bool:
         return True
 
     st.title("AgriRAG")
-    password = st.text_input("Password / كلمة المرور", type="password")
-    if st.button("Sign in / دخول"):
+    password = st.text_input("Password", type="password")
+    if st.button("Sign in"):
         if hmac.compare_digest(password, APP_PASSWORD):
             st.session_state.authenticated = True
             st.rerun()
         else:
-            st.error("Incorrect password / كلمة المرور غير صحيحة")
+            st.error("Incorrect password")
     return False

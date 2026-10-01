@@ -361,8 +361,7 @@ if st.button(ask_label, type="primary", use_container_width=False) and question.
                         else ""
                     )
                     st.markdown(
-                        f"**[{i}] {source_name}**  
-"
+                        f"**[{i}] {source_name}**  \n"
                         f"<span class='source-meta'>Page {page_text}{score_text}</span>",
                         unsafe_allow_html=True,
                     )

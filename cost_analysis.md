@@ -39,7 +39,11 @@ Output =   250 / 1,000,000 × $0.15   = $0.00003750
 Total variable LLM cost/query        = $0.00013125
 ```
 
-Because embedding and reranking are local, the planned **API variable cost/query is $0.00013125**.
+Because embedding and reranking are local in the **validated baseline**, the planned **API variable cost/query is $0.00013125**.
+
+### Railway live-demo reranking note
+
+The current 1 GB Railway service uses Cohere `rerank-v3.5` instead of the local cross-encoder because running both local transformer models exceeded the container memory limit. The current capstone demo uses a Cohere Trial API key, for which Cohere states API calls are free but rate-limited and not intended for commercial production. Therefore the demo's current rerank charge is $0. For a commercial deployment, either provision enough RAM to return to the validated local reranker or replace the rerank line item with the then-current Cohere production search-unit price. The required 1K/10K/100K table below remains the reproducible local-reranker baseline.
 
 ## 3. Required monthly query scenarios
 

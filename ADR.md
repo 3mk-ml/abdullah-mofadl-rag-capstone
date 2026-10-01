@@ -1,19 +1,33 @@
-# ADR-001 — AgriRAG Capstone Architecture
+# ADR-001 — AgriRAG Final Architecture
 
-**Status:** Proposed for implementation and validation  
-**Date:** 2026-09-28
+**Status:** Accepted  
+**Decision date:** 2026-10-01
 
 ## Context
-The capstone requires a publicly deployed RAG system over 20–50 high-quality documents, hybrid search, reranking, Recall@5 evaluation, RAGAS, authentication, and cost analysis. The system must be feasible on a student laptop and a low-cost public deployment while preserving enough retrieval quality to exceed 80% Recall@5 on a manually reviewed 30-question set.
+The Track B Week 3 capstone requires a public RAG system over 20–50 quality documents, justified ingestion choices, hybrid retrieval plus reranking, a 30-question Recall@5 evaluation, a 20-question RAGAS report, a bilingual interface with authentication, deployment, a one-page ADR, and cost analysis. AgriRAG also has to remain practical on student-scale infrastructure and support Arabic questions over primarily English agricultural references.
 
 ## Decision
-AgriRAG will use authoritative agriculture documents from FAO, ICARDA/CGIAR, and the World Bank. Documents are extracted with PyMuPDF and split with recursive structure-aware chunking. The baseline uses `intfloat/multilingual-e5-small` embeddings and persistent Chroma. Retrieval combines dense vector search with BM25 using Reciprocal Rank Fusion. The fused candidate set is reranked with `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`, and the top five passages are sent to an OpenAI model via the Responses API. Streamlit provides a bilingual English/Arabic interface, Arabic RTL/Amiri styling, a simple password gate, and source display. Deployment target is Hugging Face Spaces.
+AgriRAG uses 20 successfully collected authoritative agriculture documents from a 24-source curated manifest, focused on FAO/FAO-partner, ICARDA/CGIAR, and World Bank material. PyMuPDF extracts documents. Text is split with recursive structure-aware chunks targeting about 350 tokens with 60-token overlap.
 
-## Rationale
-This architecture separates expensive generation from low-cost local retrieval. Multilingual local embedding and reranking support Arabic questions without spending the limited API balance on indexing or rerank calls. Chroma is appropriate for a small capstone corpus and avoids a separate server. Hybrid retrieval is selected because technical agriculture questions mix semantic paraphrases with exact terms, crop names, units, and acronyms. RRF avoids incompatible raw score scales. A cross-encoder reranker improves precision after broad retrieval while remaining small enough for CPU use. Streamlit and Hugging Face Spaces minimize deployment work before the deadline.
+Embeddings use local `intfloat/multilingual-e5-small` vectors stored in persistent Chroma. Retrieval combines vector top-20 and BM25 top-20 results with Reciprocal Rank Fusion (RRF, k=60). The fused set is reranked locally with `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`, and the best five passages are supplied to the generator.
+
+The final generation provider is Cohere using `command-r7b-12-2024`. The system prompt requires answers to use only retrieved evidence, preserve units, expose insufficient evidence, and cite source passages. Streamlit provides English/Arabic UI, RTL rendering, Amiri typography, source excerpts, latency display, and a shared-password gate. Docker is the deployment boundary; Railway is the primary operational target, with Hugging Face Spaces remaining compatible.
+
+## Evidence for the decision
+The final corpus produced **1,828 extracted pages/units and 5,540 chunks**. The manually verified 30-question retrieval test achieved **Recall@5 = 90.00% (27/30)**, exceeding the required 80% threshold without relabelling the three misses (Q03, Q12, Q24).
+
+The successful 20-question RAGAS run (#21) used Cohere Command R7B consistently for generation and judging and produced:
+
+- Faithfulness: **0.8329**
+- Answer relevancy: **0.9819**
+- Context precision: **0.9840**
+- Context recall: **1.0000**
+- Mean end-to-end answer latency recorded by the evaluation: **8.16 s**
+
+These measurements support keeping the hybrid + reranker design. The faithfulness result also shows that generation is not perfect; Q08, Q10, and Q20 require manual review rather than presenting the benchmark as flawless.
 
 ## Alternatives considered
-Paid embeddings/reranking were rejected as the default because repeated experiments would spend the limited course balance. Pinecone/Qdrant cloud and pgvector were rejected because the corpus does not justify extra infrastructure. Pure vector retrieval was rejected because it can miss lexical identifiers and the capstone explicitly requires hybrid search. Semantic chunking was deferred because its extra complexity should be justified by measured Recall@5 rather than assumed.
+Pure vector retrieval was rejected because technical agriculture questions contain exact names, units, acronyms, and terminology that BM25 can recover well. Cloud vector databases were unnecessary at this corpus scale and add credentials/cost. Paid embedding and reranking APIs were rejected because local multilingual models provide repeatable evaluation with zero per-query API charge. Earlier OpenAI, Gemini, and Groq evaluation routes were not retained because free-credit/access/rate-limit constraints made the final capstone run unreliable. Cohere Command R7B was accepted after the native structured-output path completed all 20 RAGAS questions successfully.
 
 ## Consequences
-The first deployment may have a cold-start delay while local transformer models load. The index must be rebuilt whenever chunking or embedding settings change. Quality claims are not assumed: the final architecture values are accepted only after the 30-question Recall@5 run and the 20-question RAGAS evaluation. If the baseline misses the target, the tuning order is chunking -> candidate depth/BM25 -> reranker -> embedding model.
+The design is inexpensive and reproducible, but CPU deployments have model cold-start and memory costs. The local index must be rebuilt when corpus/chunking/embedding settings change. A shared password is sufficient for the capstone but not for multi-tenant production. Production cost estimates must use measured Cohere `billed_units` from live traffic. Three real-user tests remain a human deliverable and must not be fabricated.

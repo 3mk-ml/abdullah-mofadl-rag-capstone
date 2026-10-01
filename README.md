@@ -1,50 +1,71 @@
 # 🌿 AgriRAG — Evidence-Grounded Agriculture Assistant
 
-A production-style Retrieval-Augmented Generation capstone for irrigation, soil fertility, plant nutrition, crop water stress, dryland agriculture, and climate-smart agriculture.
+AgriRAG is a production-style Retrieval-Augmented Generation capstone for irrigation, soil fertility, plant nutrition, crop water stress, water harvesting, and climate-smart agriculture. It was built for the Yemen4LLM Track B Week 3 RAG capstone.
 
-The project is designed for the Yemen4LLM Track B Week 3 capstone and includes the complete submission path: 20–50 curated documents, ingestion, hybrid retrieval, multilingual reranking, Recall@5 evaluation, Streamlit authentication, Arabic RTL/Amiri support, RAGAS, cost analysis, and public deployment.
+**Repository:** https://github.com/3mk-ml/abdullah-mofadl-rag-capstone
 
-## Why this project
+## Final verified results
 
-Agricultural guidance is spread across long FAO, ICARDA/CGIAR, and World Bank technical reports. General LLMs can sound confident while inventing agronomic thresholds or doses. AgriRAG retrieves evidence first, reranks it, and instructs the generator to answer only from the supplied sources with citations.
+| Requirement / metric | Final result |
+|---|---:|
+| Final curated corpus | **20 documents** |
+| Extracted pages/units | **1,828** |
+| Indexed chunks | **5,540** |
+| Golden retrieval questions | **30** |
+| Recall@5 | **90.00% (27/30)** |
+| RAGAS questions | **20/20 completed** |
+| RAGAS faithfulness | **0.8329** |
+| RAGAS answer relevancy | **0.9819** |
+| RAGAS context precision | **0.9840** |
+| RAGAS context recall | **1.0000** |
+| Mean evaluation latency | **8.16 s** |
+| Median evaluation latency | **7.31 s** |
+
+Final RAGAS workflow: [GitHub Actions run #21](https://github.com/3mk-ml/abdullah-mofadl-rag-capstone/actions/runs/36805862750)
+
+Machine-readable reports:
+- `data/eval/recall_at_5_report.json`
+- `data/eval/ragas_report.csv`
+- `data/eval/ragas_summary.json`
+
+The strict Recall@5 misses were Q03, Q12, and Q24 and were retained rather than relabelled after seeing retrieval results. RAGAS also exposed faithfulness weaknesses on some questions; the score is reported as measured rather than presented as perfect.
 
 ## Architecture
 
 ```text
-OFFLINE INGESTION
-PDF/TXT/MD
-   -> PyMuPDF extraction
-   -> recursive structure-aware chunks
-   -> multilingual-e5-small embeddings
-   -> persistent Chroma
-   -> BM25 lexical index
+OFFLINE
+Official agriculture documents
+  -> PyMuPDF
+  -> recursive structure-aware chunks (~350 tokens, ~60 overlap)
+  -> intfloat/multilingual-e5-small
+  -> Chroma vector index + BM25 index
 
-ONLINE QUERY
-User question (Arabic or English)
-   -> query embedding
-   -> vector top-20 + BM25 top-20
-   -> Reciprocal Rank Fusion (RRF)
-   -> multilingual cross-encoder reranker
-   -> top-5 evidence chunks
-   -> OpenAI Responses API
-   -> grounded answer + source/page citations
+ONLINE
+Arabic/English question
+  -> E5 query embedding
+  -> vector top-20 + BM25 top-20
+  -> Reciprocal Rank Fusion
+  -> multilingual cross-encoder reranker
+  -> top-5 evidence passages
+  -> Cohere command-r7b-12-2024
+  -> evidence-grounded answer + [n] citations
 ```
 
-See `architecture.md` for the written technical justifications and `ADR.md` for the one-page decision record.
+See `architecture.md` for the technical rationale and `ADR.md` for the final one-page architecture decision.
 
-## Tech stack
-
+## Final technology stack
 - Python 3.11
-- PyMuPDF for extraction
-- `intfloat/multilingual-e5-small` for local multilingual embeddings
-- Chroma for persistent vector storage
-- `rank-bm25` for lexical retrieval
-- Reciprocal Rank Fusion for hybrid ranking
-- `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` for multilingual reranking
-- OpenAI Responses API for final answer generation
-- Streamlit for UI and authentication
-- RAGAS for end-to-end evaluation
-- Hugging Face Spaces (Docker) for deployment
+- Streamlit
+- PyMuPDF
+- `intfloat/multilingual-e5-small`
+- Chroma
+- `rank-bm25`
+- Reciprocal Rank Fusion
+- `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1`
+- Cohere `command-r7b-12-2024`
+- RAGAS 0.4.3
+- Docker
+- Railway-ready deployment configuration
 
 ## Repository structure
 
@@ -58,34 +79,37 @@ See `architecture.md` for the written technical justifications and `ADR.md` for 
 ├── user_testing.md
 ├── requirements.txt
 ├── Dockerfile
+├── railway.toml
 ├── data/
 │   ├── sources_manifest.csv
-│   ├── raw/                  # put the 20–50 final documents here
-│   ├── index/                # generated Chroma/BM25/chunk files
+│   ├── raw/
+│   ├── index/
 │   └── eval/
-│       └── golden_questions.json
+│       ├── golden_questions.json
+│       ├── recall_at_5_report.json
+│       ├── ragas_report.csv
+│       └── ragas_summary.json
 ├── scripts/
+│   ├── download_corpus.py
 │   ├── check_corpus.py
 │   ├── ingest.py
 │   ├── evaluate_recall.py
 │   ├── evaluate_ragas.py
 │   └── cost_analysis.py
-├── src/
-│   ├── loaders.py
-│   ├── chunking.py
-│   ├── embeddings.py
-│   ├── bm25_index.py
-│   ├── retrieval.py
-│   ├── reranker.py
-│   ├── llm.py
-│   └── rag_pipeline.py
-└── tests/
-    └── test_smoke.py
+└── src/
+    ├── auth.py
+    ├── chunking.py
+    ├── embeddings.py
+    ├── bm25_index.py
+    ├── retrieval.py
+    ├── reranker.py
+    ├── llm.py
+    └── rag_pipeline.py
 ```
 
-## 1. Clone and create environment
+## Run locally
 
-Windows PowerShell:
+### Windows PowerShell
 
 ```powershell
 git clone https://github.com/3mk-ml/abdullah-mofadl-rag-capstone.git
@@ -96,7 +120,7 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
-Linux/macOS:
+### Linux/macOS
 
 ```bash
 git clone https://github.com/3mk-ml/abdullah-mofadl-rag-capstone.git
@@ -107,194 +131,137 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Set at minimum:
+Configure at minimum:
 
 ```text
-OPENAI_API_KEY=...
-OPENAI_MODEL=gpt-5.6-luna
+LLM_PROVIDER=cohere
+COHERE_API_KEY=...
+COHERE_MODEL=command-r7b-12-2024
 APP_PASSWORD=...
 ```
 
-Do not commit `.env`.
+Never commit the real `.env` or API keys.
 
-## 2. Collect the corpus
-
-`data/sources_manifest.csv` contains 25 high-quality source candidates from FAO, ICARDA/CGIAR, and the World Bank. The curated manifest now contains 24 official FAO/FAO-partner publications. Download them reproducibly with:\n\n```bash\npython scripts/download_corpus.py\n```\n\nThe downloader saves the corpus into `data/raw/`, writes SHA-256 inventory metadata, and fails the run if fewer than 20 documents are collected.
-
-Important rules:
-- Prefer complete PDF publications, not random blogs.
-- Keep the original descriptive filename.
-- Avoid duplicate editions of the same document unless there is a clear reason.
-- If a PDF is scanned and extracts no text, replace it with an OCR/text version before indexing.
-
-Check the corpus:
+## Prepare corpus and index
 
 ```bash
+python scripts/download_corpus.py
 python scripts/check_corpus.py
-```
-
-## 3. Build the index
-
-```bash
 python scripts/ingest.py
 ```
 
-This creates:
-- `data/index/chroma/`
-- `data/index/bm25.pkl`
-- `data/index/chunks.jsonl`
+The downloader requires at least 20 successful source documents. The final verified corpus has 20 documents.
 
-Do not run ingestion repeatedly unless the corpus, chunking, or embedding configuration changed. This project deliberately uses local embedding to avoid unnecessary API spend.
-
-## 4. Build the 30-question golden set
-
-Open `data/eval/golden_questions.json`. The file already contains 30 realistic domain questions, but the gold fields are intentionally blank because they must be verified against the **actual final corpus**.
-
-For every question:
-1. Find the passage that really answers it.
-2. Fill `gold_source` with the exact filename.
-3. Add a distinctive `must_contain` phrase or, preferably, the final `gold_chunk_ids` after inspecting `chunks.jsonl`.
-4. Write a concise human `ground_truth` answer for at least 20 questions used in RAGAS.
-
-Do not invent gold answers before checking the source.
-
-## 5. Measure Recall@5
+## Retrieval evaluation
 
 ```bash
-python scripts/evaluate_recall.py --golden data/eval/golden_questions.json --k 5
-```
-
-Submission target: **Recall@5 >= 80%**.
-
-If it misses the target, tune in this order:
-1. inspect misses manually;
-2. change chunk size/overlap;
-3. change vector/BM25 candidate depth;
-4. inspect BM25 tokenization and technical terms;
-5. compare reranker on/off;
-6. only then test a different embedding model.
-
-Record every experiment in a small table in your final README. This makes the improvement defensible rather than anecdotal.
-
-## 6. Run locally
-
-```bash
-streamlit run app.py
-```
-
-The UI supports English and Arabic. Arabic mode is RTL and loads the Amiri font. The password comes from `APP_PASSWORD`.
-
-## 7. Test with three real users
-
-Use `user_testing.md`. Test the live app with three actual people and record what they tried and what you changed. Do not fabricate this deliverable.
-
-## 8. RAGAS evaluation
-
-### GitHub Actions RAGAS workflow
-
-A manual workflow is included at `.github/workflows/ragas.yml`.
-
-Before running it, add a repository Actions secret named `OPENAI_API_KEY` under:
-
-`Settings -> Secrets and variables -> Actions -> New repository secret`
-
-Then open **Actions -> Run 20-question RAGAS evaluation -> Run workflow**. The workflow rebuilds the verified corpus/index, confirms Recall@5 is still >=80%, runs RAGAS on 20 reviewed questions, and uploads `ragas_report.csv` plus `ragas_summary.json`.
-
-
-
-After retrieval is stable and Recall@5 has cleared the target, run RAGAS **once** on 20 reviewed questions to protect the API balance:
-
-```bash
-python scripts/evaluate_ragas.py \
+python scripts/evaluate_recall.py \
   --golden data/eval/golden_questions.json \
-  --out data/eval/ragas_report.csv
+  --k 5 \
+  --fail-below 0.80
 ```
 
-The script evaluates:
+Verified result: **Recall@5 = 90.00% (27/30)**.
+
+The metric uses manually verified exact gold chunk IDs, not post-hoc source relabelling.
+
+## RAGAS evaluation
+
+The project evaluates:
 - faithfulness
 - answer relevancy
 - context precision
 - context recall
 
-Save the CSV and summarize the mean scores in this README before submission.
-
-## 9. Cost analysis
-
-The baseline cost model is in `cost_analysis.md`. Before submission, replace assumed token counts with measured averages from the final app.
+Run locally:
 
 ```bash
-python scripts/cost_analysis.py \
-  --input-tokens ACTUAL_INPUT \
-  --output-tokens ACTUAL_OUTPUT \
-  --input-price CURRENT_INPUT_RATE \
-  --output-price CURRENT_OUTPUT_RATE \
-  --queries-per-user 10
+python scripts/evaluate_ragas.py \
+  --golden data/eval/golden_questions.json \
+  --out data/eval/ragas_report.csv \
+  --checkpoint data/eval/ragas_checkpoint.json \
+  --evaluator-model command-r7b-12-2024
 ```
 
-Report both the query-volume view and the required 1K / 10K / 100K user scenarios, with the activity assumption explicitly stated.
+For GitHub Actions, configure the repository secret:
 
-## 10. Deploy to Hugging Face Spaces
+```text
+COHERE_API_KEY
+```
 
-Create a **Docker Space**, then push this repository to it. The included `Dockerfile` runs Streamlit on port 7860.
+The successful final evaluation was **run #21**, using Cohere Command R7B for both answer generation and evaluation with local E5 embeddings for answer-relevancy scoring.
 
-Add Space secrets:
-- `OPENAI_API_KEY`
-- `OPENAI_MODEL`
-- `APP_PASSWORD`
+## Run the UI
 
-Build the vector/BM25 index before deployment so the public app does not re-index the corpus on every restart. If index files become large, use Git LFS.
+```bash
+streamlit run app.py
+```
 
-## Evaluation results
+Features:
+- English and Arabic modes
+- Arabic RTL layout
+- Amiri typography
+- shared-password authentication
+- vector + BM25 + RRF hybrid retrieval
+- multilingual reranking
+- visible evidence snippets and source/page metadata
+- answer latency display
 
-Fill this only after real runs:
+## Cost
 
-| Metric | Result |
-|---|---:|
-| Recall@5, 30 questions | **90.00% (27/30)** |
-| RAGAS faithfulness | TBD |
-| RAGAS answer relevancy | TBD |
-| RAGAS context precision | TBD |
-| RAGAS context recall | TBD |
-| Median latency | TBD |
+See `cost_analysis.md` for the final cost model.
 
-## Retrieval ablation
+Current Command R7B production pricing used in the report:
+- input: **$0.0375 / 1M tokens**
+- output: **$0.15 / 1M tokens**
 
-Fill this after experiments:
+With the report's conservative 2,500-input / 250-output token planning envelope, estimated generation cost is **$0.00013125/query**, or about:
+- **$0.13 / 1K queries**
+- **$1.31 / 10K queries**
+- **$13.13 / 100K queries**
 
-| Variant | Recall@5 | Notes |
-|---|---:|---|
-| Vector only | TBD | baseline |
-| Vector + BM25 + RRF | TBD | hybrid |
-| Hybrid + reranker | TBD | final |
+Embedding and reranking API cost is $0 because both are local.
 
-## Final submission checklist
+## Docker / Railway deployment
 
-- [ ] Public GitHub repository link
-- [ ] Live demo URL opens for another person
-- [ ] `ADR.md` is one page when rendered/printed
-- [ ] `data/eval/ragas_report.csv` generated from 20 reviewed questions
-- [ ] `cost_analysis.md` updated with measured tokens and all 3 scenarios
-- [ ] 20–50 high-quality documents in the final corpus
-- [x] 30 manually verified golden questions
-- [x] Recall@5 >= 80% (**90.00%**)
-- [ ] Authentication enabled
-- [ ] Arabic RTL/Amiri works if Arabic is used
-- [ ] Three real-user tests documented
-- [ ] README contains exact reproducible run/deploy steps
+The Docker image runs Streamlit on the platform-provided `PORT` (falling back to 7860). `railway.toml` contains the deployment health check.
+
+Required deployment variables:
+
+```text
+LLM_PROVIDER=cohere
+COHERE_API_KEY=<secret>
+COHERE_MODEL=command-r7b-12-2024
+APP_PASSWORD=<secret>
+```
+
+The deployment process must have enough memory for the local E5 embedding model and multilingual cross-encoder reranker.
+
+## User testing
+
+The capstone requires testing with **three real users**. `user_testing.md` intentionally remains a real-user log and must not be fabricated. Each tester should sign in, ask straightforward and multi-concept questions, inspect evidence, and report what was confusing before the final submission.
 
 ## Safety and scope
 
-AgriRAG is an educational and decision-support assistant. It must not fabricate agronomic thresholds, chemical doses, or farm-specific prescriptions. When evidence is missing or conflicting, the correct behavior is to say that the provided corpus is insufficient and show the available sources.
+AgriRAG is an educational decision-support assistant, not a substitute for local agricultural expertise. It must not invent crop thresholds, fertilizer/pesticide doses, irrigation quantities, or source citations. If the retrieved corpus does not contain enough evidence, the correct behavior is to say that the evidence is insufficient.
 
+## Final submission checklist
 
-## Verified retrieval evaluation
+- [x] Public GitHub repository
+- [x] 20–50 high-quality documents (**20 final documents**)
+- [x] Justified chunking / embedding / vector database decisions
+- [x] Hybrid search + reranking
+- [x] 30 manually verified golden questions
+- [x] Recall@5 >= 80% (**90.00%**)
+- [x] Streamlit UI
+- [x] Authentication implementation
+- [x] Arabic RTL / Amiri support
+- [x] 20-question RAGAS report
+- [x] Final RAGAS metrics in README
+- [x] One-page accepted ADR
+- [x] Cost analysis with 1K / 10K / 100K scenarios
+- [x] Docker deployment configuration
+- [ ] Live public demo URL
+- [ ] Three real-user tests recorded
 
-GitHub Actions run [#7](https://github.com/3mk-ml/abdullah-mofadl-rag-capstone/actions/runs/36487406502) evaluated the final hybrid retrieval pipeline against 30 manually verified questions using exact gold chunk IDs.
-
-- **Recall@5: 90.00% (27/30)**
-- Required threshold: **>= 80%**
-- Result: **passed**
-- Indexed corpus: **20 documents, 1,828 extracted units, 5,540 chunks**
-- Evaluation report: `data/eval/recall_at_5_report.json`
-
-The three strict-ID misses were Q03, Q12, and Q24. The score is retained as measured rather than relabelled after observing retrieved results.
+The final two unchecked items require an external hosting account and actual human testers; they are deliberately not fabricated.

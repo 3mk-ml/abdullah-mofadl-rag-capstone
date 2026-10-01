@@ -8,22 +8,23 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY requirements-runtime.txt .
 
-# Railway is CPU-only for this deployment. Installing the CPU wheel first
-# prevents pip from pulling multi-gigabyte CUDA runtime packages that are not
-# used by the local embedding/reranking models.
+# CPU-only PyTorch keeps the production image far smaller than the default
+# CUDA-enabled wheel set pulled on generic Linux runners.
 RUN python -m pip install --upgrade pip \
     && pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu \
-    && pip install -r requirements.txt
+    && pip install -r requirements-runtime.txt
 
 COPY . .
 
-# Build the exact corpus/index during the image build so the live service
-# starts ready to answer queries and does not depend on ephemeral disk state.
+# Build the authoritative corpus and retrieval index into the immutable image.
+# This makes each Railway replica self-contained and avoids rebuilding on every
+# container restart.
 RUN python scripts/prepare_deploy.py
 
-# Pre-cache the multilingual reranker as part of the immutable image.
+# Cache the reranker during build so the first real query does not need a model
+# download.
 RUN python - <<'PY'
 from src.reranker import model
 model()

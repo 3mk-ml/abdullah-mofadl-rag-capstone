@@ -14,6 +14,9 @@ import pandas as pd
 from openai import AsyncOpenAI, RateLimitError
 
 from src.config import (
+    COHERE_API_KEY,
+    COHERE_BASE_URL,
+    COHERE_MODEL,
     GEMINI_API_KEY,
     GEMINI_BASE_URL,
     GEMINI_EMBEDDING_MODEL,
@@ -36,7 +39,7 @@ from ragas.metrics.collections.context_recall import ContextRecall
 
 
 def _retry_delay_seconds(exc: Exception) -> float:
-    """Parse Groq's 'Please try again in XmYs' hint from a 429."""
+    """Parse a provider's 'try again in XmYs' hint from a 429."""
     message = str(exc)
     match = re.search(
         r"try again in\s+(?:(\d+)m)?([0-9.]+)s",
@@ -51,7 +54,7 @@ def _retry_delay_seconds(exc: Exception) -> float:
 
 
 async def _with_quota_wait(label: str, factory, max_waits: int = 8):
-    """Wait for Groq's rolling quota window instead of failing the workflow."""
+    """Wait for a provider rate-limit window instead of failing the workflow."""
     waits = 0
     while True:
         try:
@@ -62,7 +65,7 @@ async def _with_quota_wait(label: str, factory, max_waits: int = 8):
                 raise
             delay = _retry_delay_seconds(exc) + 5.0
             print(
-                f"Groq quota reached during {label}; "
+                f"Provider quota reached during {label}; "
                 f"waiting {delay:.1f}s then retrying automatically "
                 f"(wait {waits}/{max_waits}).",
                 flush=True,
@@ -81,7 +84,7 @@ async def _ask_with_quota_wait(question: str, top_n: int = 5) -> dict:
                 raise
             delay = _retry_delay_seconds(exc) + 5.0
             print(
-                f"Groq quota reached during answer generation; "
+                f"Provider quota reached during answer generation; "
                 f"waiting {delay:.1f}s then retrying automatically "
                 f"(wait {waits}/8).",
                 flush=True,
@@ -191,7 +194,16 @@ async def run(
     evaluator_model: str,
     checkpoint_path: Path,
 ) -> None:
-    if LLM_PROVIDER == "groq":
+    if LLM_PROVIDER == "cohere":
+        if not COHERE_API_KEY:
+            raise SystemExit("COHERE_API_KEY is not set")
+        api_key = COHERE_API_KEY
+        base_url = COHERE_BASE_URL
+        embedding_model = "intfloat/multilingual-e5-small"
+        # Cohere exposes an OpenAI-compatible endpoint with structured outputs.
+        # Use RAGAS' stable OpenAI/Instructor adapter against that endpoint.
+        ragas_provider = "openai"
+    elif LLM_PROVIDER == "groq":
         if not GROQ_API_KEY:
             raise SystemExit("GROQ_API_KEY is not set")
         api_key = GROQ_API_KEY
@@ -219,7 +231,7 @@ async def run(
     else:
         raise SystemExit(
             f"Unsupported LLM_PROVIDER={LLM_PROVIDER!r}; "
-            "use 'openai', 'gemini', or 'groq'."
+            "use 'openai', 'gemini', 'groq', or 'cohere'."
         )
 
     import ragas
@@ -258,7 +270,7 @@ async def run(
         **evaluator_kwargs,
     )
 
-    if LLM_PROVIDER == "groq":
+    if LLM_PROVIDER in {"groq", "cohere"}:
         evaluator_embeddings = embedding_factory(
             "huggingface",
             model=embedding_model,
@@ -375,7 +387,9 @@ def main() -> None:
         default=Path("data/eval/ragas_checkpoint.json"),
     )
 
-    if LLM_PROVIDER == "groq":
+    if LLM_PROVIDER == "cohere":
+        default_model = COHERE_MODEL
+    elif LLM_PROVIDER == "groq":
         default_model = GROQ_MODEL
     elif LLM_PROVIDER == "gemini":
         default_model = GEMINI_MODEL

@@ -70,13 +70,26 @@ def _cohere_schema(model_cls):
     return expand(schema)
 
 
-class CohereNativeRagasLLM:
-    """Minimal RAGAS LLM adapter backed by Cohere Chat V2 JSON Schema."""
+class CohereNativeRagasLLM(InstructorLLM):
+    """InstructorLLM-compatible adapter backed by Cohere Chat V2 JSON Schema.
+
+    RAGAS 0.4.3 collection metrics enforce isinstance(llm, InstructorLLM).
+    We subclass InstructorLLM so the metrics accept the adapter, while
+    overriding generation to call Cohere's native structured-output API.
+    """
 
     def __init__(self, api_key: str, model: str, max_tokens: int):
         self.client = cohere.AsyncClientV2(api_key=api_key)
         self.model = model
+        self.provider = "cohere"
         self.max_tokens = max_tokens
+        self.model_args = {
+            "max_tokens": max_tokens,
+            "temperature": 0,
+        }
+        self.system_prompt = None
+        self.cache = None
+        self.is_async = True
 
     async def agenerate(self, prompt: str, response_model):
         schema = _cohere_schema(response_model)

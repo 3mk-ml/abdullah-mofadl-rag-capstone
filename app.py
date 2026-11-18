@@ -22,6 +22,19 @@ QUESTION_BANK = ROOT / "data" / "eval" / "golden_questions.json"
 logger = logging.getLogger("agrirag")
 
 
+@st.cache_resource(show_spinner=False)
+def ensure_search_index() -> bool:
+    """Build the deployment corpus/index once per app process, when needed.
+
+    Docker images already contain this index. Streamlit Community Cloud starts
+    from the GitHub checkout, where data/raw and data/index are not committed.
+    """
+    from scripts.prepare_deploy import main as prepare_deploy
+
+    prepare_deploy()
+    return True
+
+
 @st.cache_data(show_spinner=False)
 def load_sample_questions() -> list[str]:
     try:
@@ -337,8 +350,9 @@ else:
     st.info(f"Selected question: {question}")
 
 if st.button("Ask AgriRAG", type="primary") and question.strip():
-    with st.spinner("Searching sources and reranking evidence..."):
+    with st.spinner("Preparing the knowledge base if needed, then searching sources..."):
         try:
+            ensure_search_index()
             result = ask(question.strip(), top_n=TOP_N)
         except Exception:
             logger.exception("AgriRAG query failed")

@@ -1,6 +1,10 @@
 name: Publish prebuilt AgriRAG search index
 
 on:
+  push:
+    branches: ["deploy/streamlit-free"]
+    paths:
+      - ".github/workflows/publish-streamlit-index.yml"
   workflow_dispatch:
 
 permissions:

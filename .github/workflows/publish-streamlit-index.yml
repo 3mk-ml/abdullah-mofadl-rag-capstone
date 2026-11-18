@@ -1,0 +1,50 @@
+name: Publish prebuilt AgriRAG search index
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agrirag-streamlit-index-release
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    env:
+      TOKENIZERS_PARALLELISM: "false"
+      HF_HOME: ${{ runner.temp }}/huggingface
+    steps:
+      - name: Checkout free-hosting branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Download official agricultural corpus
+        run: python scripts/download_corpus.py
+
+      - name: Build vector and BM25 indexes
+        run: python scripts/ingest.py
+
+      - name: Package reusable search index with checksum
+        run: python scripts/package_prebuilt_index.py
+
+      - name: Publish public index as GitHub Release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="agrirag-streamlit-index-v1"
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "AgriRAG Streamlit prebuilt search index v1" --notes "Chroma, chunks and BM25 index precomputed for Streamlit hosting. SHA256 verification required." --latest=false
+          gh release upload "$TAG" dist/agrirag-index-v1.zip dist/agrirag-index-v1.zip.sha256 --clobber

@@ -24,14 +24,10 @@ logger = logging.getLogger("agrirag")
 
 @st.cache_resource(show_spinner=False)
 def ensure_search_index() -> bool:
-    """Build the deployment corpus/index once per app process, when needed.
+    """Fetch the precomputed, verified index; never rebuild PDFs at query time."""
+    from src.prebuilt_index import ensure_prebuilt_index
 
-    Docker images already contain this index. Streamlit Community Cloud starts
-    from the GitHub checkout, where data/raw and data/index are not committed.
-    """
-    from scripts.prepare_deploy import main as prepare_deploy
-
-    prepare_deploy()
+    ensure_prebuilt_index()
     return True
 
 
@@ -350,15 +346,16 @@ else:
     st.info(f"Selected question: {question}")
 
 if st.button("Ask AgriRAG", type="primary") and question.strip():
-    with st.spinner("Preparing the knowledge base if needed, then searching sources..."):
+    with st.spinner("Loading the prepared index and searching sources..."):
         try:
             ensure_search_index()
             result = ask(question.strip(), top_n=TOP_N)
         except Exception:
             logger.exception("AgriRAG query failed")
             st.error(
-                "The question could not be completed right now. "
-                "The server error has been logged; please try again shortly."
+                "AgriRAG could not load the search index or answer the question. "
+                "Check that the GitHub Actions prebuilt index release was published, "
+                "and inspect the Streamlit server logs for details."
             )
         else:
             st.markdown(

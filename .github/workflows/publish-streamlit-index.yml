@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 100
     env:
       TOKENIZERS_PARALLELISM: "false"
-      HF_HOME: ${{ runner.temp }}/huggingface
+      HF_HOME: /tmp/agrirag-hf-cache
     steps:
       - name: Checkout free-hosting branch
         uses: actions/checkout@v4
